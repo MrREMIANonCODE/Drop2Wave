@@ -65,5 +65,35 @@ node_modules/
 # dotenv environment variables file
 .env
 
+# Local env variants (keep only .env.example in repo)
+.env.*
+!.env.example
+
+# Local Firebase project mapping
+.firebaserc
+
+# Secrets and private credentials
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+serviceAccount*.json
+*service-account*.json
+*firebase-adminsdk*.json
+credentials*.json
+secret*.json
+
+# Local override files
+*.local
+
+# Private runtime/content data
+public/uploads/
+public/data/store.json
+public/data/*.bak
+public/data/*.backup
+public/data/*.tmp
+
 # dataconnect generated files
 .dataconnect
