@@ -25,6 +25,7 @@ let createOrderDraft = {
     adminNote: '',
     items: []
 };
+let currentEditOrderId = null;
 
 function getViewFromUrl() {
     try {
@@ -35,6 +36,46 @@ function getViewFromUrl() {
     } catch (e) {
         return 'all';
     }
+}
+
+function getEditOrderIdFromUrl() {
+    try {
+        const params = new URLSearchParams(window.location.search || '');
+        return String(params.get('edit') || '').trim();
+    } catch (e) {
+        return '';
+    }
+}
+
+function getOrderById(orderId) {
+    if (!orderId) return null;
+    return allOrders.find(o => getOrderKey(o) === String(orderId)) || null;
+}
+
+function hydrateCreateDraftFromOrder(order) {
+    const pricing = order && order.pricing ? order.pricing : {};
+    const customer = order && order.customer ? order.customer : {};
+
+    createOrderDraft = {
+        customerName: String(customer.name || '').trim(),
+        customerPhone: String(customer.phone || '').trim(),
+        customerEmail: String(customer.email || '').trim(),
+        customerAddress: String(customer.address || '').trim(),
+        deliveryArea: String(customer.deliveryArea || 'dhaka-70'),
+        orderStatus: String(order && order.status ? order.status : 'new'),
+        discountType: String(pricing.discountType || 'fixed'),
+        discountAmount: Number(pricing.discountAmount || 0) || 0,
+        customerNote: String(customer.specialNotes || '').trim(),
+        adminNote: String(order && order.adminNote ? order.adminNote : '').trim(),
+        items: (Array.isArray(order && order.items) ? order.items : []).map(item => ({
+            id: item.id,
+            name: String(item.name || 'Product'),
+            price: Number(item.price || 0) || 0,
+            quantity: Number(item.quantity || 0) || 0,
+            image: String(item.image || ''),
+            categoryId: item.categoryId || ''
+        }))
+    };
 }
 
 function normalizeStatus(status) {
@@ -344,6 +385,19 @@ function setupDateRangeFilter() {
 }
 
 function renderCreateView() {
+    const editOrderId = getEditOrderIdFromUrl();
+    const editOrder = editOrderId ? getOrderById(editOrderId) : null;
+    const isEditMode = Boolean(editOrder && editOrderId);
+
+    if (isEditMode && currentEditOrderId !== editOrderId) {
+        hydrateCreateDraftFromOrder(editOrder);
+        currentEditOrderId = editOrderId;
+    }
+
+    if (!isEditMode) {
+        currentEditOrderId = null;
+    }
+
     const products = (typeof AdminStore !== 'undefined' && typeof AdminStore.getProducts === 'function'
         ? AdminStore.getProducts().filter(p => p && p.isActive !== false)
         : []);
@@ -356,10 +410,10 @@ function renderCreateView() {
         <div class="create-order-wrap">
             <div class="create-order-head d-flex justify-content-between align-items-center mb-3">
                 <div>
-                    <div class="text-muted" style="font-size:12px;">Orders</div>
-                    <h5 class="mb-0">Create Order</h5>
+                    <div class="text-muted" style="font-size:12px;">${isEditMode ? `Invoice #${escapeHtml(getInvoiceNumber(editOrder))}` : 'Orders'}</div>
+                    <h5 class="mb-0">${isEditMode ? 'Edit Order' : 'Create Order'}</h5>
                 </div>
-                <a href="orders.html?view=all" class="btn btn-outline-secondary btn-sm">Back to Orders</a>
+                <a href="orders.html?view=all" class="btn btn-outline-secondary btn-sm">${isEditMode ? 'Back to Invoice' : 'Back to Orders'}</a>
             </div>
 
             <div class="row">
@@ -472,7 +526,7 @@ function renderCreateView() {
                         </div>
 
                         <div class="mt-3 d-flex justify-content-end">
-                            <button type="button" class="btn btn-primary btn-sm" id="submitCreateOrderBtn">Create Order</button>
+                            <button type="button" class="btn btn-primary btn-sm" id="submitCreateOrderBtn">${isEditMode ? 'Save Changes' : 'Create Order'}</button>
                         </div>
                     </div>
                 </div>
@@ -670,11 +724,9 @@ async function submitCreateOrder() {
         return;
     }
 
+    const store = readOrdersStoreFast();
     const pricing = getCreatePricing();
     const now = Date.now();
-    const store = readOrdersStoreFast();
-    const invoiceNo = generateUniqueInvoiceNumber(store.orders || []);
-    const orderId = invoiceNo;
 
     const statusNoteMap = {
         new: 'Order created from admin create page',
@@ -686,51 +738,112 @@ async function submitCreateOrder() {
         delivered: 'Order created and marked delivered from admin create page'
     };
 
-    const order = {
-        orderId,
-        invoiceNumber: invoiceNo,
-        orderDate: new Date(now).toISOString(),
-        orderTimestamp: now,
-        orderTime: new Date(now).toLocaleString('en-BD'),
-        customer: {
-            name: createOrderDraft.customerName,
-            phone: createOrderDraft.customerPhone,
-            email: createOrderDraft.customerEmail,
-            address: createOrderDraft.customerAddress,
-            deliveryArea: createOrderDraft.deliveryArea,
-            specialNotes: createOrderDraft.customerNote
-        },
-        items: createOrderDraft.items.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: Number(item.price || 0) || 0,
-            quantity: Number(item.quantity || 0) || 0,
-            total: (Number(item.price || 0) || 0) * (Number(item.quantity || 0) || 0),
-            image: item.image || '',
-            categoryId: item.categoryId || ''
-        })),
-        pricing: {
-            subtotal: pricing.subtotal,
-            deliveryCharge: pricing.shipping,
-            discountType: createOrderDraft.discountType,
-            discountAmount: createOrderDraft.discountAmount,
-            discountValue: pricing.discount,
-            total: pricing.total
-        },
-        status: createOrderDraft.orderStatus,
-        adminNote: createOrderDraft.adminNote,
-        statusHistory: [
-            {
-                status: createOrderDraft.orderStatus,
-                timestamp: new Date(now).toLocaleString('en-BD'),
-                note: statusNoteMap[createOrderDraft.orderStatus] || 'Order created from admin create page'
-            }
-        ]
-    };
-
     const previousStore = cloneStore(store);
     if (!Array.isArray(store.orders)) store.orders = [];
-    store.orders.unshift(order);
+    const editOrderId = getEditOrderIdFromUrl();
+    const editIndex = editOrderId ? store.orders.findIndex(o => getOrderKey(o) === String(editOrderId)) : -1;
+    const isEditMode = editIndex !== -1;
+
+    if (isEditMode) {
+        const existing = store.orders[editIndex] || {};
+        const prevStatus = normalizeStatus(existing.status);
+        const nextStatus = normalizeStatus(createOrderDraft.orderStatus);
+        const history = Array.isArray(existing.statusHistory) ? existing.statusHistory.slice() : [];
+
+        if (prevStatus !== nextStatus) {
+            history.push({
+                status: nextStatus,
+                timestamp: new Date(now).toLocaleString('en-BD'),
+                note: `Status updated from ${getStatusText(prevStatus)} to ${getStatusText(nextStatus)} from admin edit page`
+            });
+        } else {
+            history.push({
+                status: nextStatus,
+                timestamp: new Date(now).toLocaleString('en-BD'),
+                note: 'Order updated from admin edit page'
+            });
+        }
+
+        store.orders[editIndex] = {
+            ...existing,
+            customer: {
+                ...(existing.customer || {}),
+                name: createOrderDraft.customerName,
+                phone: createOrderDraft.customerPhone,
+                email: createOrderDraft.customerEmail,
+                address: createOrderDraft.customerAddress,
+                deliveryArea: createOrderDraft.deliveryArea,
+                specialNotes: createOrderDraft.customerNote
+            },
+            items: createOrderDraft.items.map(item => ({
+                id: item.id,
+                name: item.name,
+                price: Number(item.price || 0) || 0,
+                quantity: Number(item.quantity || 0) || 0,
+                total: (Number(item.price || 0) || 0) * (Number(item.quantity || 0) || 0),
+                image: item.image || '',
+                categoryId: item.categoryId || ''
+            })),
+            pricing: {
+                subtotal: pricing.subtotal,
+                deliveryCharge: pricing.shipping,
+                discountType: createOrderDraft.discountType,
+                discountAmount: createOrderDraft.discountAmount,
+                discountValue: pricing.discount,
+                total: pricing.total
+            },
+            status: nextStatus,
+            adminNote: createOrderDraft.adminNote,
+            statusHistory: history
+        };
+    } else {
+        const invoiceNo = generateUniqueInvoiceNumber(store.orders || []);
+        const orderId = invoiceNo;
+
+        const order = {
+            orderId,
+            invoiceNumber: invoiceNo,
+            orderDate: new Date(now).toISOString(),
+            orderTimestamp: now,
+            orderTime: new Date(now).toLocaleString('en-BD'),
+            customer: {
+                name: createOrderDraft.customerName,
+                phone: createOrderDraft.customerPhone,
+                email: createOrderDraft.customerEmail,
+                address: createOrderDraft.customerAddress,
+                deliveryArea: createOrderDraft.deliveryArea,
+                specialNotes: createOrderDraft.customerNote
+            },
+            items: createOrderDraft.items.map(item => ({
+                id: item.id,
+                name: item.name,
+                price: Number(item.price || 0) || 0,
+                quantity: Number(item.quantity || 0) || 0,
+                total: (Number(item.price || 0) || 0) * (Number(item.quantity || 0) || 0),
+                image: item.image || '',
+                categoryId: item.categoryId || ''
+            })),
+            pricing: {
+                subtotal: pricing.subtotal,
+                deliveryCharge: pricing.shipping,
+                discountType: createOrderDraft.discountType,
+                discountAmount: createOrderDraft.discountAmount,
+                discountValue: pricing.discount,
+                total: pricing.total
+            },
+            status: createOrderDraft.orderStatus,
+            adminNote: createOrderDraft.adminNote,
+            statusHistory: [
+                {
+                    status: createOrderDraft.orderStatus,
+                    timestamp: new Date(now).toLocaleString('en-BD'),
+                    note: statusNoteMap[createOrderDraft.orderStatus] || 'Order created from admin create page'
+                }
+            ]
+        };
+
+        store.orders.unshift(order);
+    }
 
     if (!saveOrdersStore(store)) {
         alert('Could not create order.');
@@ -757,7 +870,7 @@ async function submitCreateOrder() {
         items: []
     };
 
-    alert('Order created successfully.');
+    alert(isEditMode ? 'Order updated successfully.' : 'Order created successfully.');
     window.location.href = 'orders.html?view=all';
 }
 
@@ -979,7 +1092,7 @@ function renderOrders() {
         const customerName = String(order.customer?.name || '-');
         const phone = String(order.customer?.phone || '-');
         const address = String(order.customer?.address || '-');
-        const ipAddress = getOrderIpAddress(order);
+        const customerAddress = String(order.customer?.address || '-');
         const total = Number(order.pricing?.total || 0).toLocaleString();
         const dateMeta = formatOrderDateWithAge(order);
 
@@ -997,16 +1110,15 @@ function renderOrders() {
                 </td>
                 <td class="orders-col-customer">
                     <div class="orders-customer-name">${escapeHtml(customerName)}</div>
-                    <div class="orders-customer-address">${escapeHtml(address)}</div>
                     <div class="orders-customer-phone">${escapeHtml(phone)}</div>
                 </td>
-                <td class="orders-col-ip">${escapeHtml(ipAddress)}</td>
+                <td class="orders-col-address">${escapeHtml(customerAddress)}</td>
                 <td class="orders-col-amount"><strong>Tk ${total}</strong></td>
                 <td class="orders-col-status"><span class="status-badge status-${order.status}">${statusText}</span></td>
                 <td class="orders-col-action">
                     <div class="orders-actions-wrap">
                         <button class="orders-action-btn orders-action-invoice toggle-order-details" data-order-id="${escapeHtml(orderId)}" type="button"><i class="far fa-eye"></i> Invoice</button>
-                        <button class="orders-action-btn orders-action-edit toggle-order-details" data-order-id="${escapeHtml(orderId)}" type="button"><i class="far fa-edit"></i> Edit</button>
+                        <button class="orders-action-btn orders-action-edit orders-edit-btn" data-order-id="${escapeHtml(orderId)}" type="button"><i class="far fa-edit"></i> Edit</button>
                         <button class="orders-action-btn orders-action-update quick-update-btn" data-order-id="${escapeHtml(orderId)}" data-current-status="${escapeHtml(order.status)}" type="button"><i class="fas fa-sync-alt"></i> Update</button>
                         <button class="orders-action-btn orders-action-delete delete-order-btn" data-order-id="${escapeHtml(orderId)}" type="button"><i class="far fa-trash-alt"></i> Delete</button>
                     </div>
@@ -1031,7 +1143,7 @@ function renderOrders() {
                         <th class="orders-col-tracking">Tracking</th>
                         <th class="orders-col-date">Date</th>
                         <th class="orders-col-customer">Customer</th>
-                        <th class="orders-col-ip">IP Address</th>
+                        <th class="orders-col-address">Address</th>
                         <th class="orders-col-amount">Amount</th>
                         <th class="orders-col-status">Status</th>
                         <th class="orders-col-action">Action</th>
@@ -1079,6 +1191,12 @@ function renderOrders() {
         const nextStatus = promptNextStatus(currentStatus);
         if (!nextStatus || nextStatus === currentStatus) return;
         updateOrderStatus(orderId, nextStatus);
+    });
+
+    container.off('click', '.orders-edit-btn').on('click', '.orders-edit-btn', function() {
+        const orderId = String($(this).data('order-id') || '').trim();
+        if (!orderId) return;
+        window.location.href = `order/edit.html?id=${encodeURIComponent(orderId)}`;
     });
 
     container.off('click', '.delete-order-btn').on('click', '.delete-order-btn', function() {

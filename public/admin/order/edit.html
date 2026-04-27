@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="../">
+    <title>Edit Order - Drop2Wave Admin</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="../assets/logo.jpeg">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../frontend/css/admin-theme.css" rel="stylesheet">
+    <link href="../frontend/css/admin-pages.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid admin-shell">
+        <div class="admin-layout">
+            <aside class="side-nav">
+                <div class="side-nav-inner">
+                    <div class="side-top side-logo-wrap">
+                        <img src="../assets/logo.jpeg" alt="Drop2Wave" class="side-logo">
+                        <button type="button" class="sidebar-toggle d-none d-lg-inline-flex" id="sidebarToggle" aria-label="Collapse sidebar">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+
+                    <div class="profile-card">
+                        <div class="profile-avatar">A</div>
+                        <div class="profile-text">
+                            <div class="profile-name">Admin Super Admin</div>
+                            <div class="profile-role">super-admin</div>
+                        </div>
+                    </div>
+
+                    <div class="side-scroll">
+                        <ul class="nav flex-column">
+                            <li class="nav-item"><a class="nav-link" href="index.html"><i class="fas fa-columns nav-icon"></i><span class="nav-label">Dashboard</span></a></li>
+                            <li class="nav-item"><a class="nav-link" href="categories.html"><i class="fas fa-th-large nav-icon"></i><span class="nav-label">Categories</span></a></li>
+                            <li class="nav-item"><a class="nav-link" href="products.html"><i class="fas fa-box-open nav-icon"></i><span class="nav-label">Products</span></a></li>
+                            <li class="nav-item"><a class="nav-link" href="reviews.html"><i class="fas fa-star nav-icon"></i><span class="nav-label">Reviews</span></a></li>
+                            <li class="nav-item"><a class="nav-link active" href="orders.html"><i class="fas fa-shopping-bag nav-icon"></i><span class="nav-label">Orders</span></a></li>
+                        </ul>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="main-panel">
+                <div class="order-edit-wrap" id="orderEditRoot">
+                    <div class="order-edit-header">
+                        <div>
+                            <div class="order-edit-kicker" id="orderEditInvoice">Invoice #</div>
+                            <h2 class="order-edit-title">Edit Order</h2>
+                        </div>
+                        <a href="orders.html?view=all" id="orderEditBackBtn" class="order-edit-back-btn">Back to Invoice</a>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-xl-8 col-lg-8 mb-3">
+                            <div class="order-edit-card">
+                                <h5>Shipping Information</h5>
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="editCustomerName">Name</label>
+                                        <input type="text" class="form-control" id="editCustomerName">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="editCustomerPhone">Phone</label>
+                                        <input type="text" class="form-control" id="editCustomerPhone">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label for="editCityArea">City / District</label>
+                                        <select class="form-control" id="editCityArea">
+                                            <option value="dhaka-70">Inside Dhaka</option>
+                                            <option value="outside-130">Outside Dhaka</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="editCustomerAddress">Address</label>
+                                        <input type="text" class="form-control" id="editCustomerAddress">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="editDeliveryCharge">Delivery Charge</label>
+                                        <input type="number" class="form-control" id="editDeliveryCharge" min="0" step="1">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label for="editDiscountType">Discount Type</label>
+                                        <select class="form-control" id="editDiscountType">
+                                            <option value="fixed">Fixed Amount</option>
+                                            <option value="percent">Percentage</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="editDiscountAmount">Discount Amount</label>
+                                        <input type="number" class="form-control" id="editDiscountAmount" min="0" step="0.01" value="0">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="editOrderStatus">Order Status</label>
+                                        <select class="form-control" id="editOrderStatus">
+                                            <option value="new">New Order</option>
+                                            <option value="complete">Complete</option>
+                                            <option value="no_response">No Response</option>
+                                            <option value="hold">Hold</option>
+                                            <option value="cancelled">Cancelled</option>
+                                            <option value="in_courier">In Courier</option>
+                                            <option value="delivered">Delivered</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="editCustomerNote">Customer Note</label>
+                                    <textarea class="form-control" id="editCustomerNote" rows="3"></textarea>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="editAdminNote">Admin Note</label>
+                                    <textarea class="form-control" id="editAdminNote" rows="3"></textarea>
+                                </div>
+
+                                <div class="order-items-card">
+                                    <div class="order-items-head">
+                                        <h5 class="mb-0">Order Items</h5>
+                                        <button type="button" class="order-custom-btn" id="editAddCustomItemBtn">Add Custom Item</button>
+                                    </div>
+
+                                    <div class="order-items-meta" id="editItemsMeta">
+                                        <div class="order-items-chip">
+                                            <span class="order-items-chip-label">Total Items</span>
+                                            <strong id="editItemsCount">0</strong>
+                                        </div>
+                                        <div class="order-items-chip">
+                                            <span class="order-items-chip-label">Items Subtotal</span>
+                                            <strong id="editItemsSubtotal">Tk 0.00</strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row align-items-end mb-2 order-product-tools-row">
+                                        <div class="form-group col-md-4 mb-0">
+                                            <label for="editSearchProduct">Search Product</label>
+                                            <div class="order-search-wrap">
+                                                <input type="text" class="form-control" id="editSearchProduct" placeholder="Type product name or SKU...">
+                                                <button type="button" class="order-search-clear" id="editSearchClearBtn" title="Clear search">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-md-4 mb-0 order-product-select-group">
+                                            <label for="editProductSelect">Product</label>
+                                            <small class="order-product-meta d-block" id="editProductSearchMeta">Showing all products</small>
+                                            <select class="form-control" id="editProductSelect"></select>
+                                        </div>
+                                        <div class="form-group col-md-2 mb-0">
+                                            <label for="editAddQty">Qty</label>
+                                            <input type="number" min="1" step="1" class="form-control" id="editAddQty" value="1">
+                                        </div>
+                                        <div class="form-group col-md-2 mb-0">
+                                            <button type="button" class="order-add-product-btn" id="editAddProductBtn">Add Product</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="order-product-preview" id="editProductPreview">
+                                        <div class="order-product-preview-empty">Select a product to preview details before adding.</div>
+                                    </div>
+
+                                    <div class="table-responsive admin-table-wrap order-items-table-wrap">
+                                        <table class="table table-bordered table-sm mb-0 order-edit-items-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Product</th>
+                                                    <th style="width:90px;">Qty</th>
+                                                    <th style="width:130px;">Price</th>
+                                                    <th style="width:130px;">Total</th>
+                                                    <th style="width:110px;">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="editItemsTbody"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="text-right mt-3">
+                                    <button type="button" class="order-save-btn" id="editSaveOrderBtn">Save Changes</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-4 col-lg-4 mb-3">
+                            <div class="order-edit-summary" id="editOrderSummary">
+                                <h5>Order Summary</h5>
+                                <div class="order-summary-row"><span>Subtotal</span><strong id="summarySubtotal">৳0.00</strong></div>
+                                <div class="order-summary-row"><span>Shipping</span><strong id="summaryShipping">৳0.00</strong></div>
+                                <div class="order-summary-row"><span>Discount (<span id="summaryDiscountType">Fixed</span>)</span><strong id="summaryDiscount">- ৳0.00</strong></div>
+                                <hr>
+                                <div class="order-summary-row total"><span>Total</span><strong id="summaryTotal">৳0.00</strong></div>
+                                <hr>
+                                <h6 class="mb-2">Products</h6>
+                                <div id="summaryProducts" class="order-summary-products">No items</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="../frontend/lib/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="../frontend/js/admin-store.js"></script>
+    <script src="../frontend/js/universal-data.js"></script>
+    <script src="../frontend/js/admin-shell.js"></script>
+    <script src="../frontend/js/admin-order-edit.js"></script>
+</body>
+</html>
