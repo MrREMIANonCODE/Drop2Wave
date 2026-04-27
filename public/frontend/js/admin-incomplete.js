@@ -1,12 +1,14 @@
 $(document).ready(function() {
     const INCOMPLETE_KEY = 'drop2wave_incomplete_orders_v1';
     const $status = $('#statusMessage');
+    let activeDateRange = null;
 
     if (!AdminStore.isAuthenticated()) {
         window.location.href = 'login.html';
         return;
     }
 
+    setupDateRangeFilter();
     loadIncomplete();
     setupEvents();
 
@@ -76,8 +78,57 @@ $(document).ready(function() {
         return Number.isNaN(d.getTime()) ? '-' : d.toLocaleString('en-BD');
     }
 
+    function getEntryTimestamp(entry) {
+        const updated = Number(entry && entry.updatedAt ? entry.updatedAt : 0);
+        if (Number.isFinite(updated) && updated > 0) return updated;
+        const created = Number(entry && entry.createdAt ? entry.createdAt : 0);
+        if (Number.isFinite(created) && created > 0) return created;
+        return 0;
+    }
+
+    function inDateRange(timestamp) {
+        if (!activeDateRange || !activeDateRange.startDate || !activeDateRange.endDate) return true;
+        if (!Number.isFinite(timestamp) || timestamp <= 0) return false;
+
+        const start = new Date(
+            activeDateRange.startDate.getFullYear(),
+            activeDateRange.startDate.getMonth(),
+            activeDateRange.startDate.getDate(),
+            0, 0, 0, 0
+        ).getTime();
+        const end = new Date(
+            activeDateRange.endDate.getFullYear(),
+            activeDateRange.endDate.getMonth(),
+            activeDateRange.endDate.getDate(),
+            23, 59, 59, 999
+        ).getTime();
+
+        return timestamp >= start && timestamp <= end;
+    }
+
+    function setupDateRangeFilter() {
+        if (typeof window.createD2WDateRangeFilter !== 'function') return;
+
+        window.createD2WDateRangeFilter({
+            defaultPresetDays: 30,
+            onRangeChange: function(startDate, endDate) {
+                if (startDate instanceof Date && endDate instanceof Date) {
+                    activeDateRange = {
+                        startDate: new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()),
+                        endDate: new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+                    };
+                } else {
+                    activeDateRange = null;
+                }
+                loadIncomplete();
+            }
+        });
+    }
+
     function loadIncomplete() {
-        const list = readList().sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0));
+        const list = readList()
+            .filter(entry => inDateRange(getEntryTimestamp(entry)))
+            .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0));
         $('#incompleteCount').text(list.length);
 
         if (!list.length) {
@@ -168,7 +219,7 @@ $(document).ready(function() {
         $(document).on('click', '#logoutBtn', function() {
             if (confirm('Logout from admin panel?')) {
                 AdminStore.clearSession();
-                window.location.href = 'login.html';
+                    window.location.href = 'login.html?logout=1';
             }
         });
 

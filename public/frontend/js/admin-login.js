@@ -3,10 +3,41 @@
  */
 
 $(document).ready(function() {
+    let forcedLogout = false;
+    try {
+        const params = new URLSearchParams(window.location.search || '');
+        forcedLogout = params.get('logout') === '1';
+    } catch (err) {
+        forcedLogout = false;
+    }
+
+    if (forcedLogout) {
+        AdminStore.clearSession();
+        try {
+            window.history.replaceState(null, '', window.location.pathname);
+        } catch (err) {
+            // Ignore URL cleanup failures.
+        }
+    }
+
+    let recentlyLoggedOut = false;
+    try {
+        const ts = Number(sessionStorage.getItem('drop2wave_admin_recent_logout') || 0);
+        recentlyLoggedOut = Number.isFinite(ts) && ts > 0 && (Date.now() - ts) < 15000;
+    } catch (err) {
+        recentlyLoggedOut = false;
+    }
+
     // Check if already logged in
-    if (AdminStore.isAuthenticated()) {
+    if (!forcedLogout && !recentlyLoggedOut && AdminStore.isAuthenticated()) {
         window.location.href = 'index.html';
         return;
+    }
+
+    try {
+        sessionStorage.removeItem('drop2wave_admin_recent_logout');
+    } catch (err) {
+        // Ignore storage cleanup failures.
     }
     
     const $form = $('#adminLoginForm');
@@ -50,7 +81,7 @@ $(document).ready(function() {
     // Logout functionality
     $(document).on('click', '#logoutBtn', function() {
         AdminStore.clearSession();
-        window.location.href = 'login.html';
+        window.location.href = 'login.html?logout=1';
     });
     
     function showStatus(message, type) {

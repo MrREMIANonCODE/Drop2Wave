@@ -11,6 +11,7 @@ let ordersById = new Map();
 let currentView = 'all';
 let renderLimit = 30;
 const renderStep = 30;
+let activeDateRange = null;
 let createOrderDraft = {
     customerName: '',
     customerPhone: '',
@@ -184,6 +185,45 @@ function isOrderFromToday(order) {
     return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
 }
 
+function getOrderDateValue(order) {
+    const ts = Number(order && order.orderTimestamp ? order.orderTimestamp : 0);
+    if (Number.isFinite(ts) && ts > 0) {
+        return new Date(ts);
+    }
+
+    if (order && order.orderDate) {
+        const dt = new Date(order.orderDate);
+        if (!Number.isNaN(dt.getTime())) return dt;
+    }
+
+    return null;
+}
+
+function matchesDateRange(order) {
+    if (!activeDateRange || !activeDateRange.startDate || !activeDateRange.endDate) {
+        return true;
+    }
+
+    const dt = getOrderDateValue(order);
+    if (!dt) return false;
+
+    const start = new Date(
+        activeDateRange.startDate.getFullYear(),
+        activeDateRange.startDate.getMonth(),
+        activeDateRange.startDate.getDate(),
+        0, 0, 0, 0
+    ).getTime();
+    const end = new Date(
+        activeDateRange.endDate.getFullYear(),
+        activeDateRange.endDate.getMonth(),
+        activeDateRange.endDate.getDate(),
+        23, 59, 59, 999
+    ).getTime();
+    const current = dt.getTime();
+
+    return current >= start && current <= end;
+}
+
 function getOrderViewTitle() {
     const titles = {
         create: 'Create Order',
@@ -240,7 +280,7 @@ function setupEvents() {
             if (typeof AdminStore !== 'undefined' && AdminStore.clearSession) {
                 AdminStore.clearSession();
             }
-            window.location.href = 'login.html';
+                window.location.href = 'login.html?logout=1';
         }
     });
 
@@ -272,6 +312,7 @@ function applyFilters() {
 
     filteredOrders = allOrders.filter(order => {
         if (!matchesCurrentView(order)) return false;
+        if (!matchesDateRange(order)) return false;
         if (currentView === 'all' && statusFilter && order.status !== statusFilter) return false;
         if (search && !String(order._searchText || '').includes(search)) return false;
         return true;
@@ -279,6 +320,27 @@ function applyFilters() {
 
     renderLimit = renderStep;
     renderOrders();
+}
+
+function setupDateRangeFilter() {
+    if (typeof window.createD2WDateRangeFilter !== 'function') return;
+
+    window.createD2WDateRangeFilter({
+        defaultPresetDays: 30,
+        onRangeChange: function(startDate, endDate) {
+            if (startDate instanceof Date && endDate instanceof Date) {
+                activeDateRange = {
+                    startDate: new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()),
+                    endDate: new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+                };
+            } else {
+                activeDateRange = null;
+            }
+
+            applyFilters();
+            updateStats();
+        }
+    });
 }
 
 function renderCreateView() {
@@ -1030,10 +1092,11 @@ async function deleteOrder(orderId) {
 }
 
 function updateStats() {
-    const total = allOrders.length;
-    const newCount = allOrders.filter(o => o.status === 'new').length;
-    const completeCount = allOrders.filter(o => o.status === 'complete').length;
-    const inCourierCount = allOrders.filter(o => o.status === 'in_courier').length;
+    const source = allOrders.filter(o => matchesCurrentView(o) && matchesDateRange(o));
+    const total = source.length;
+    const newCount = source.filter(o => o.status === 'new').length;
+    const completeCount = source.filter(o => o.status === 'complete').length;
+    const inCourierCount = source.filter(o => o.status === 'in_courier').length;
 
     $('#totalOrders').text(total);
     $('#confirmedOrders').text(newCount);
@@ -1049,6 +1112,7 @@ function init() {
 
     currentView = getViewFromUrl();
     setupHeader();
+    setupDateRangeFilter();
     setupEvents();
 
     $('#ordersContainer').html(`

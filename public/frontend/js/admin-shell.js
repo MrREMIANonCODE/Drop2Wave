@@ -289,12 +289,19 @@
                 '  <div class="admin-topbar-right">',
                 '    <button type="button" class="admin-topbar-btn admin-topbar-fullscreen-btn" title="Toggle fullscreen"><i class="fas fa-expand"></i></button>',
                 '    <button type="button" class="admin-topbar-btn admin-topbar-bell-btn" title="Notifications"><i class="far fa-bell"></i></button>',
-                '    <div class="admin-topbar-user">',
+                '    <div class="admin-topbar-user-wrap">',
+                '    <button type="button" class="admin-topbar-user" aria-haspopup="true" aria-expanded="false">',
                 '      <div class="admin-topbar-user-text">',
                 '        <div class="admin-topbar-user-name">' + profileName + '</div>',
                 '        <div class="admin-topbar-user-role">' + profileRole + '</div>',
                 '      </div>',
                 '      <div class="admin-topbar-avatar">' + avatarLetter + '</div>',
+                '    </button>',
+                '    <div class="admin-topbar-user-menu" aria-hidden="true">',
+                '      <a class="admin-topbar-user-menu-item" href="#" data-admin-user-action="profile"><i class="far fa-user"></i><span>Profile</span></a>',
+                '      <a class="admin-topbar-user-menu-item" href="#" data-admin-user-action="settings"><i class="fas fa-cog"></i><span>Settings</span></a>',
+                '      <button type="button" class="admin-topbar-user-menu-item logout" data-admin-user-action="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>',
+                '    </div>',
                 '    </div>',
                 '  </div>',
                 '</div>'
@@ -306,6 +313,72 @@
 
     function setupTopbarActions() {
         document.addEventListener("click", function(e) {
+            var userToggle = e.target && e.target.closest ? e.target.closest(".admin-topbar-user") : null;
+            if (userToggle) {
+                var userWrap = userToggle.closest(".admin-topbar-user-wrap");
+                var wasOpen = userWrap && userWrap.classList.contains("is-open");
+
+                document.querySelectorAll(".admin-topbar-user-wrap.is-open").forEach(function (openWrap) {
+                    openWrap.classList.remove("is-open");
+                    var openBtn = openWrap.querySelector(".admin-topbar-user");
+                    var openMenu = openWrap.querySelector(".admin-topbar-user-menu");
+                    if (openBtn) openBtn.setAttribute("aria-expanded", "false");
+                    if (openMenu) openMenu.setAttribute("aria-hidden", "true");
+                });
+
+                if (userWrap && !wasOpen) {
+                    userWrap.classList.add("is-open");
+                    var btn = userWrap.querySelector(".admin-topbar-user");
+                    var menu = userWrap.querySelector(".admin-topbar-user-menu");
+                    if (btn) btn.setAttribute("aria-expanded", "true");
+                    if (menu) menu.setAttribute("aria-hidden", "false");
+                }
+                return;
+            }
+
+            var userAction = e.target && e.target.closest ? e.target.closest("[data-admin-user-action]") : null;
+            if (userAction) {
+                var action = String(userAction.getAttribute("data-admin-user-action") || "");
+                e.preventDefault();
+
+                var closeWrap = userAction.closest(".admin-topbar-user-wrap");
+                if (closeWrap) {
+                    closeWrap.classList.remove("is-open");
+                    var closeBtn = closeWrap.querySelector(".admin-topbar-user");
+                    var closeMenu = closeWrap.querySelector(".admin-topbar-user-menu");
+                    if (closeBtn) closeBtn.setAttribute("aria-expanded", "false");
+                    if (closeMenu) closeMenu.setAttribute("aria-hidden", "true");
+                }
+
+                if (action === "logout") {
+                    if (confirm("Logout from admin panel?")) {
+                        if (window.AdminStore && typeof window.AdminStore.clearSession === "function") {
+                            window.AdminStore.clearSession();
+                        }
+
+                        var loginPath = getAdminRootPath() + "login.html?logout=1";
+                        window.location.href = loginPath;
+                    }
+                    return;
+                }
+
+                if (action === "profile" || action === "settings") {
+                    var label = action === "profile" ? "Profile" : "Settings";
+                    alert(label + " page will be added soon.");
+                    return;
+                }
+            }
+
+            if (e.target && e.target.closest && !e.target.closest(".admin-topbar-user-wrap")) {
+                document.querySelectorAll(".admin-topbar-user-wrap.is-open").forEach(function (openWrap) {
+                    openWrap.classList.remove("is-open");
+                    var openBtn = openWrap.querySelector(".admin-topbar-user");
+                    var openMenu = openWrap.querySelector(".admin-topbar-user-menu");
+                    if (openBtn) openBtn.setAttribute("aria-expanded", "false");
+                    if (openMenu) openMenu.setAttribute("aria-hidden", "true");
+                });
+            }
+
             var fullscreenBtn = e.target && e.target.closest ? e.target.closest(".admin-topbar-fullscreen-btn") : null;
             if (fullscreenBtn) {
                 if (document.fullscreenElement) {

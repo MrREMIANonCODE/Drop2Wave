@@ -42,16 +42,38 @@
                         </ul>
                     </div>
 
-                    <div class="side-actions">
-                        <a href="../index.html" class="btn btn-sm btn-outline-light btn-block mb-2"><i class="fas fa-globe"></i> <span class="nav-label">View Website</span></a>
-                        <button type="button" class="btn btn-sm btn-light btn-block" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> <span class="nav-label">Logout</span></button>
-                    </div>
                 </div>
             </aside>
 
             <main class="main-panel">
                 <h4 class="mb-1">Incomplete Orders</h4>
                 <p class="text-muted mb-3">Checkout attempts where customers entered partial details but did not confirm the order.</p>
+                <div class="d2w-date-filter-wrap mb-3" id="d2wDateRangeRoot">
+                    <label class="d2w-date-filter-label" for="d2wDateRangeTrigger">Filter Date Range</label>
+                    <button type="button" class="d2w-date-filter-trigger" id="d2wDateRangeTrigger" aria-haspopup="true" aria-expanded="false">
+                        <span id="d2wDateRangeValue">Select Date Range</span>
+                        <i class="far fa-calendar-alt"></i>
+                    </button>
+                    <div class="d2w-date-range-popup" id="d2wDateRangePopup" aria-hidden="true">
+                        <div class="d2w-date-range-presets">
+                            <button type="button" class="d2w-date-preset" data-days="7">Last 7 Days</button>
+                            <button type="button" class="d2w-date-preset" data-days="30">Last 30 Days</button>
+                            <button type="button" class="d2w-date-preset" data-days="90">Last 90 Days</button>
+                        </div>
+                        <div class="d2w-date-range-calendars">
+                            <div class="d2w-date-range-selection" id="d2wDateRangeSelection">Pick start and end date</div>
+                            <div class="d2w-date-range-calendar-head">
+                                <button type="button" class="d2w-cal-nav" id="d2wPrevMonth" aria-label="Previous month">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <button type="button" class="d2w-cal-nav" id="d2wNextMonth" aria-label="Next month">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            <div class="d2w-date-range-calendar-grid" id="d2wCalendarGrid"></div>
+                        </div>
+                    </div>
+                </div>
                 <div id="statusMessage" class="alert d-none" role="alert"></div>
 
                 <div class="card-lite mb-3">
@@ -71,6 +93,7 @@
     <script src="../frontend/lib/jquery/3.4.1/jquery.min.js"></script>
     <script src="../frontend/js/admin-store.js"></script>
     <script src="../frontend/js/universal-data.js"></script>
+    <script src="../frontend/js/admin-date-range-filter.js"></script>
     <script src="../frontend/js/admin-shell.js"></script>
     <script src="../frontend/js/admin-incomplete.js"></script>
 </body>

@@ -42,61 +42,105 @@
                         </ul>
                     </div>
 
-                    <div class="side-actions">
-                        <a href="../index.html" class="btn btn-sm btn-outline-light btn-block mb-2"><i class="fas fa-globe"></i> <span class="nav-label">View Website</span></a>
-                        <button type="button" class="btn btn-sm btn-light btn-block" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> <span class="nav-label">Logout</span></button>
-                    </div>
                 </div>
             </aside>
 
             <main class="main-panel">
                 <h4 class="mb-1">Dashboard</h4>
-                <p class="muted mb-4">Track your current uploads and jump to separate management pages.</p>
+                <p class="muted mb-3">Track your current uploads and jump to separate management pages.</p>
 
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <div class="stat-card">
-                            <div class="muted">Total Categories</div>
-                            <div class="stat-value" id="statCategories">0</div>
-                            <div class="muted">Active: <span id="statActiveCategories">0</span></div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="stat-card">
-                            <div class="muted">Total Products</div>
-                            <div class="stat-value" id="statProducts">0</div>
-                            <div class="muted">Active: <span id="statActiveProducts">0</span></div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="stat-card">
-                            <div class="muted">Total Orders</div>
-                            <div class="stat-value" id="statOrders">0</div>
-                            <div class="muted">View all orders</div>
+                <div class="orders-overview-head mb-3">
+                    <h4 class="orders-overview-title mb-0">Orders Overview</h4>
+                    <div class="d2w-date-filter-wrap mb-0" id="d2wDateRangeRoot">
+                        <label class="d2w-date-filter-label" for="d2wDateRangeTrigger">Filter Date Range</label>
+                        <button type="button" class="d2w-date-filter-trigger" id="d2wDateRangeTrigger" aria-haspopup="true" aria-expanded="false">
+                            <span id="d2wDateRangeValue">Select Date Range</span>
+                            <i class="far fa-calendar-alt"></i>
+                        </button>
+                        <div class="d2w-date-range-popup" id="d2wDateRangePopup" aria-hidden="true">
+                            <div class="d2w-date-range-presets">
+                                <button type="button" class="d2w-date-preset" data-days="7">Last 7 Days</button>
+                                <button type="button" class="d2w-date-preset" data-days="30">Last 30 Days</button>
+                                <button type="button" class="d2w-date-preset" data-days="90">Last 90 Days</button>
+                            </div>
+                            <div class="d2w-date-range-calendars">
+                                <div class="d2w-date-range-selection" id="d2wDateRangeSelection">Pick start and end date</div>
+                                <div class="d2w-date-range-calendar-head">
+                                    <button type="button" class="d2w-cal-nav" id="d2wPrevMonth" aria-label="Previous month">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <button type="button" class="d2w-cal-nav" id="d2wNextMonth" aria-label="Next month">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                                <div class="d2w-date-range-calendar-grid" id="d2wCalendarGrid"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="row mt-2">
-                    <div class="col-md-4 mb-3">
-                        <div class="stat-card">
-                            <div class="muted">New Products</div>
-                            <div class="stat-value" id="statNewProducts">0</div>
-                            <div class="muted">Homepage new-products section</div>
+                <div class="orders-overview-grid mb-3">
+                    <div class="overview-card overview-blue">
+                        <div class="overview-icon"><i class="fas fa-cube"></i></div>
+                        <div>
+                            <div class="overview-label">All Orders</div>
+                            <div class="overview-value" id="ovAllAmount">৳0.00</div>
+                            <div class="overview-count" id="ovAllCount">0 orders</div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="stat-card">
-                            <div class="muted">Pending Orders</div>
-                            <div class="stat-value" id="statPendingOrders">0</div>
-                            <div class="muted">Need processing</div>
+                    <div class="overview-card overview-green">
+                        <div class="overview-icon"><i class="fas fa-heartbeat"></i></div>
+                        <div>
+                            <div class="overview-label">New Orders</div>
+                            <div class="overview-value" id="ovNewAmount">৳0.00</div>
+                            <div class="overview-count" id="ovNewCount">0 orders</div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="stat-card">
-                            <div class="muted">Delivered</div>
-                            <div class="stat-value" id="statDeliveredOrders">0</div>
-                            <div class="muted">Successfully completed</div>
+                    <div class="overview-card overview-sky">
+                        <div class="overview-icon"><i class="far fa-check-circle"></i></div>
+                        <div>
+                            <div class="overview-label">Completed Orders</div>
+                            <div class="overview-value" id="ovCompleteAmount">৳0.00</div>
+                            <div class="overview-count" id="ovCompleteCount">0 orders</div>
+                        </div>
+                    </div>
+                    <div class="overview-card overview-purple">
+                        <div class="overview-icon"><i class="fas fa-shipping-fast"></i></div>
+                        <div>
+                            <div class="overview-label">In Courier</div>
+                            <div class="overview-value" id="ovCourierAmount">৳0.00</div>
+                            <div class="overview-count" id="ovCourierCount">0 orders</div>
+                        </div>
+                    </div>
+                    <div class="overview-card overview-teal">
+                        <div class="overview-icon"><i class="fas fa-check"></i></div>
+                        <div>
+                            <div class="overview-label">FB Sent</div>
+                            <div class="overview-value" id="ovFbSentAmount">৳0.00</div>
+                            <div class="overview-count" id="ovFbSentCount">0 orders</div>
+                        </div>
+                    </div>
+                    <div class="overview-card overview-amber">
+                        <div class="overview-icon"><i class="fas fa-pause-circle"></i></div>
+                        <div>
+                            <div class="overview-label">Hold Orders</div>
+                            <div class="overview-value" id="ovHoldAmount">৳0.00</div>
+                            <div class="overview-count" id="ovHoldCount">0 orders</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="orders-overview-foot row">
+                    <div class="col-md-6 mb-3">
+                        <div class="overview-foot-card">
+                            <div class="overview-foot-title">Orders in Last 24 Hours</div>
+                            <div class="overview-foot-value" id="ovLast24hCount">0 orders</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="overview-foot-card">
+                            <div class="overview-foot-title">Orders in Last 12 Months</div>
+                            <div class="overview-foot-value" id="ovLast12mCount">0 orders</div>
                         </div>
                     </div>
                 </div>
@@ -138,10 +182,10 @@
         </div>
     </div>
 
-    <script src="../frontend/lib/jquery/3.4.1/jquery.min.js"></script>
-    <script src="../frontend/js/admin-store.js"></script>
-    <script src="../frontend/js/checkout.js"></script>
-    <script src="../frontend/js/admin-shell.js"></script>
-    <script src="../frontend/js/admin-dashboard.js"></script>
+    <script defer src="../frontend/lib/jquery/3.4.1/jquery.min.js"></script>
+    <script defer src="../frontend/js/admin-store.js"></script>
+    <script defer src="../frontend/js/admin-order-reader.js"></script>
+    <script defer src="../frontend/js/admin-shell.js"></script>
+    <script defer src="../frontend/js/admin-dashboard.js"></script>
 </body>
 </html>

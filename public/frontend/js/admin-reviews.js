@@ -10,6 +10,7 @@ $(document).ready(async function() {
     }
 
     const currentView = getReviewsView();
+    let activeDateRange = null;
 
     if (!AdminStore.isAuthenticated()) {
         window.location.href = 'login.html';
@@ -20,6 +21,7 @@ $(document).ready(async function() {
     let cloudReviewUnsubscribe = null;
 
     setupViewMode();
+    setupDateRangeFilter();
     loadProductOptions();
     loadReviews();
     setupEvents();
@@ -126,6 +128,47 @@ $(document).ready(async function() {
         return date.toLocaleString();
     }
 
+    function inDateRange(ts) {
+        if (!activeDateRange || !activeDateRange.startDate || !activeDateRange.endDate) return true;
+        const value = Number(ts || 0);
+        if (!Number.isFinite(value) || value <= 0) return false;
+
+        const start = new Date(
+            activeDateRange.startDate.getFullYear(),
+            activeDateRange.startDate.getMonth(),
+            activeDateRange.startDate.getDate(),
+            0, 0, 0, 0
+        ).getTime();
+        const end = new Date(
+            activeDateRange.endDate.getFullYear(),
+            activeDateRange.endDate.getMonth(),
+            activeDateRange.endDate.getDate(),
+            23, 59, 59, 999
+        ).getTime();
+
+        return value >= start && value <= end;
+    }
+
+    function setupDateRangeFilter() {
+        if (typeof window.createD2WDateRangeFilter !== 'function') return;
+
+        window.createD2WDateRangeFilter({
+            defaultPresetDays: 30,
+            onRangeChange: function(startDate, endDate) {
+                if (startDate instanceof Date && endDate instanceof Date) {
+                    activeDateRange = {
+                        startDate: new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()),
+                        endDate: new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+                    };
+                } else {
+                    activeDateRange = null;
+                }
+
+                loadReviews();
+            }
+        });
+    }
+
     function getReviewImages() {
         try {
             const parsed = JSON.parse($('#reviewImages').val() || '[]');
@@ -228,7 +271,10 @@ $(document).ready(async function() {
     }
 
     function loadReviews() {
-        const reviews = AdminStore.getReviews().slice().sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+        const reviews = AdminStore.getReviews()
+            .slice()
+            .filter(r => inDateRange(r.createdAt))
+            .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
         const productsMap = getProductsMap();
 
         const pending = reviews.filter(r => String(r.status) === 'pending');
@@ -367,7 +413,7 @@ $(document).ready(async function() {
         $(document).on('click', '#logoutBtn', function() {
             if (confirm('Logout from admin panel?')) {
                 AdminStore.clearSession();
-                window.location.href = 'login.html';
+                    window.location.href = 'login.html?logout=1';
             }
         });
 

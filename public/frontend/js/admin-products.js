@@ -732,7 +732,7 @@ $(document).ready(async function() {
         $(document).on('click', '#logoutBtn', function() {
             if (confirm('Logout from admin panel?')) {
                 AdminStore.clearSession();
-                window.location.href = loginPath;
+                window.location.href = loginPath + '?logout=1';
             }
         });
     }

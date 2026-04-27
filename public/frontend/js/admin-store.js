@@ -6,6 +6,12 @@
 const AdminStore = {
     STORE_KEY: 'drop2wave_store_v1',
     SESSION_KEY: 'drop2wave_admin_session',
+    LEGACY_SESSION_KEYS: [
+        'drop2wave_admin_auth',
+        'drop2wave_auth_session',
+        'admin_session',
+        'adminAuth'
+    ],
     CLOUD_COLLECTION: 'drop2wave',
     CLOUD_DOCUMENT: 'store',
     FIREBASE_CONFIG: {
@@ -329,7 +335,27 @@ const AdminStore = {
     },
     
     clearSession() {
-        localStorage.removeItem(this.SESSION_KEY);
+        const keys = [this.SESSION_KEY].concat(this.LEGACY_SESSION_KEYS || []);
+
+        keys.forEach(key => {
+            try {
+                localStorage.removeItem(key);
+            } catch (err) {
+                // Ignore storage cleanup errors.
+            }
+
+            try {
+                sessionStorage.removeItem(key);
+            } catch (err) {
+                // Ignore storage cleanup errors.
+            }
+        });
+
+        try {
+            sessionStorage.setItem('drop2wave_admin_recent_logout', String(Date.now()));
+        } catch (err) {
+            // Ignore storage write errors.
+        }
     }
 };
 
