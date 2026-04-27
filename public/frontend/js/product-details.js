@@ -1070,6 +1070,12 @@
         var oldPrice = Number(product.oldPrice || 0);
         var price = Number(product.price || 0);
         var categoryName = getCategoryName(product.categoryId, store);
+        var contactNumber = "01843912510";
+        var whatsappPhone = "8801843912510";
+        var messengerLink = "https://www.messenger.com/t/1102809406238402";
+        var whatsappMessage = encodeURIComponent("Assalamu Alaikum, I want to know about: " + String(product.name || "this product"));
+        var whatsappLink = "https://wa.me/" + whatsappPhone + "?text=" + whatsappMessage;
+        var hotlineLink = "tel:" + contactNumber;
 
         root.innerHTML = [
             '<div class="row">',
@@ -1106,6 +1112,12 @@
             '      <button id="orderNowBtn" type="button" style="flex: 1; min-width: 0; background: #fff; color: #f85606; border: 2px solid #f85606; font-weight: 700; padding: 12px 20px; border-radius: 8px; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease;"><i class="fas fa-bolt"></i> Order Now</button>',
             '      <button id="addDetailToCart" type="button" style="flex: 1; min-width: 0; background: linear-gradient(135deg, #f85606 0%, #ff6b35 100%); color: #fff; border: none; font-weight: 700; padding: 12px 20px; border-radius: 8px; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease;"><i class="fas fa-cart-plus"></i> Add To Cart</button>',
             '    </div>',
+            '    <div class="contact-cta-row">',
+            '      <a href="' + escapeHtml(messengerLink) + '" target="_blank" rel="noopener noreferrer" class="contact-cta contact-cta--messenger"><i class="fab fa-facebook-messenger"></i> Click to Message</a>',
+            '      <a href="' + escapeHtml(whatsappLink) + '" target="_blank" rel="noopener noreferrer" class="contact-cta contact-cta--whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp Message</a>',
+            '      <a href="' + escapeHtml(hotlineLink) + '" class="contact-cta contact-cta--hotline"><i class="fas fa-phone-alt"></i> Hotline</a>',
+            '    </div>',
+            '    <div class="contact-note">WhatsApp & Hotline: ' + escapeHtml(contactNumber) + '</div>',
             '  </div>',
             '</div>'
         ].join("\n");

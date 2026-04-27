@@ -130,19 +130,54 @@
                     </div>
                 </div>
 
-                <div class="orders-overview-foot row">
-                    <div class="col-md-6 mb-3">
-                        <div class="overview-foot-card">
-                            <div class="overview-foot-title">Orders in Last 24 Hours</div>
+                <div class="d2w-analytics-grid mb-3">
+                    <section class="d2w-analytics-card">
+                        <div class="d2w-analytics-head">
+                            <h6>Orders in Last 24 Hours</h6>
                             <div class="overview-foot-value" id="ovLast24hCount">0 orders</div>
                         </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="overview-foot-card">
-                            <div class="overview-foot-title">Orders in Last 12 Months</div>
+
+                        <div class="d2w-analytics-scroll-wrap">
+                            <button type="button" class="d2w-analytics-nav" id="d2w24hLeftBtn" aria-label="Scroll left">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <div class="d2w-analytics-scroll" id="d2w24hScroll">
+                                <div class="d2w-hour-bars" id="d2w24hBars"></div>
+                            </div>
+                            <button type="button" class="d2w-analytics-nav" id="d2w24hRightBtn" aria-label="Scroll right">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="d2w-analytics-card">
+                        <div class="d2w-analytics-head">
+                            <h6>Orders in Last 12 Months</h6>
                             <div class="overview-foot-value" id="ovLast12mCount">0 orders</div>
                         </div>
-                    </div>
+
+                        <div class="d2w-donut-wrap">
+                            <div class="d2w-donut-ring" id="d2w12mDonut">
+                                <div class="d2w-donut-center">
+                                    <span class="kicker">TOTAL</span>
+                                    <strong id="d2w12mTotal">0</strong>
+                                    <span>orders</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d2w-analytics-scroll-wrap legend">
+                            <button type="button" class="d2w-analytics-nav" id="d2w12mLeftBtn" aria-label="Scroll left">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <div class="d2w-analytics-scroll" id="d2w12mLegendScroll">
+                                <div class="d2w-month-legend" id="d2w12mLegend"></div>
+                            </div>
+                            <button type="button" class="d2w-analytics-nav" id="d2w12mRightBtn" aria-label="Scroll right">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </section>
                 </div>
 
                 <div class="row mt-2">

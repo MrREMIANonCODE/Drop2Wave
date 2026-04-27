@@ -234,6 +234,26 @@ a:hover {
     text-decoration: underline;
 }
 
+/* Keep button-like links visually stable on hover/focus across the site. */
+a.btn,
+a[class*="btn-"],
+a[class^="btn-"] {
+    text-decoration: none !important;
+}
+
+a.btn:hover,
+a.btn:focus,
+a.btn:active,
+a[class*="btn-"]:hover,
+a[class*="btn-"]:focus,
+a[class*="btn-"]:active,
+a[class^="btn-"]:hover,
+a[class^="btn-"]:focus,
+a[class^="btn-"]:active {
+    color: currentColor;
+    text-decoration: none !important;
+}
+
 a:not([href]):not([class]) {
     color: inherit;
     text-decoration: none;

@@ -248,6 +248,64 @@
         gap: 10px;
         margin-top: 12px;
       }
+      .contact-cta-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .contact-cta {
+        border-radius: 10px;
+        padding: 11px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
+      }
+      .contact-cta i {
+        font-size: 16px;
+      }
+      .contact-cta:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.02);
+        text-decoration: none !important;
+        color: #fff;
+      }
+
+      .contact-cta:focus,
+      .contact-cta:active,
+      .contact-cta:visited {
+        text-decoration: none !important;
+        color: #fff;
+      }
+      .contact-cta--messenger {
+        color: #fff;
+        background: linear-gradient(135deg, #1877f2 0%, #06b6d4 100%);
+        border: 0;
+        box-shadow: 0 8px 18px rgba(24, 119, 242, 0.24);
+      }
+      .contact-cta--whatsapp {
+        color: #fff;
+        background: linear-gradient(135deg, #16a34a 0%, #10b981 100%);
+        border: 0;
+        box-shadow: 0 8px 18px rgba(22, 163, 74, 0.24);
+      }
+      .contact-cta--hotline {
+        color: #fff;
+        background: linear-gradient(135deg, #f85606 0%, #fb923c 100%);
+        border: 0;
+        box-shadow: 0 8px 18px rgba(248, 86, 6, 0.24);
+      }
+      .contact-note {
+        margin-top: 8px;
+        font-size: 13px;
+        color: #6b7280;
+      }
       #orderNowBtn:hover {
         background: #f85606 !important;
         color: #fff !important;
@@ -504,6 +562,18 @@
         }
         .cta-row {
           flex-direction: column;
+        }
+        .contact-cta-row {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        .contact-cta {
+          font-size: 11px;
+          padding: 10px 8px;
+          gap: 5px;
+        }
+        .contact-cta i {
+          font-size: 13px;
         }
         .review-form-grid {
           grid-template-columns: 1fr;

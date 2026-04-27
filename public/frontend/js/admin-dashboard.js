@@ -182,6 +182,183 @@ $(document).ready(async function() {
 
         const stat12m = document.getElementById('ovLast12mCount');
         if (stat12m) stat12m.textContent = `${last12mCount} orders`;
+
+        renderAnalyticsCharts(orders, now);
+    }
+
+    function formatHourLabel(date) {
+        return date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }).replace(' ', ' ');
+    }
+
+    function formatMonthLabel(date) {
+        return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    }
+
+    function monthKey(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function renderAnalyticsCharts(orders, nowMs) {
+        renderLast24HoursChart(orders, nowMs);
+        renderLast12MonthsDonut(orders, nowMs);
+        setupAnalyticsScrollButtons();
+    }
+
+    function renderLast24HoursChart(orders, nowMs) {
+        const barsRoot = document.getElementById('d2w24hBars');
+        const scrollRoot = document.getElementById('d2w24hScroll');
+        if (!barsRoot || !scrollRoot) return;
+
+        const hourMs = 60 * 60 * 1000;
+        const nowDate = new Date(nowMs);
+        const alignedNow = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), nowDate.getHours());
+        const bucketMap = new Map();
+
+        for (let i = 23; i >= 0; i -= 1) {
+            const slotDate = new Date(alignedNow.getTime() - (i * hourMs));
+            bucketMap.set(monthKey(slotDate) + '-' + slotDate.getDate() + '-' + slotDate.getHours(), {
+                date: slotDate,
+                count: 0
+            });
+        }
+
+        orders.forEach(function (order) {
+            const dt = getOrderDate(order);
+            if (!(dt instanceof Date) || Number.isNaN(dt.getTime())) return;
+
+            const age = nowMs - dt.getTime();
+            if (age < 0 || age > (24 * hourMs)) return;
+
+            const key = monthKey(dt) + '-' + dt.getDate() + '-' + dt.getHours();
+            if (bucketMap.has(key)) {
+                bucketMap.get(key).count += 1;
+            }
+        });
+
+        const buckets = Array.from(bucketMap.values());
+        const maxCount = Math.max(1, ...buckets.map(function (b) { return b.count; }));
+
+        barsRoot.innerHTML = buckets.map(function (item) {
+            const ratio = item.count / maxCount;
+            const height = Math.max(6, Math.round(ratio * 100));
+            return `
+                <div class="d2w-hour-col">
+                    <div class="d2w-hour-val">${item.count}</div>
+                    <div class="d2w-hour-track">
+                        <div class="d2w-hour-bar" style="height:${height}%;"></div>
+                    </div>
+                    <div class="d2w-hour-label">${formatHourLabel(item.date)}</div>
+                </div>
+            `;
+        }).join('');
+
+        if (!scrollRoot.dataset.initialized) {
+            scrollRoot.scrollLeft = scrollRoot.scrollWidth;
+            scrollRoot.dataset.initialized = '1';
+        }
+    }
+
+    function renderLast12MonthsDonut(orders, nowMs) {
+        const donut = document.getElementById('d2w12mDonut');
+        const totalEl = document.getElementById('d2w12mTotal');
+        const legendRoot = document.getElementById('d2w12mLegend');
+        if (!donut || !totalEl || !legendRoot) return;
+
+        const palette = ['#06b6d4', '#3b82f6', '#8b5cf6', '#a855f7', '#ec4899', '#f97316', '#f59e0b', '#84cc16', '#22c55e', '#10b981', '#14b8a6', '#0ea5e9'];
+        const months = [];
+        const now = new Date(nowMs);
+
+        for (let i = 11; i >= 0; i -= 1) {
+            const dt = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            months.push({
+                key: monthKey(dt),
+                label: formatMonthLabel(dt),
+                count: 0
+            });
+        }
+
+        const monthMap = new Map(months.map(function (m) { return [m.key, m]; }));
+
+        orders.forEach(function (order) {
+            const dt = getOrderDate(order);
+            if (!(dt instanceof Date) || Number.isNaN(dt.getTime())) return;
+            const key = monthKey(dt);
+            if (monthMap.has(key)) {
+                monthMap.get(key).count += 1;
+            }
+        });
+
+        const total = months.reduce(function (sum, m) { return sum + m.count; }, 0);
+        totalEl.textContent = String(total);
+
+        if (total <= 0) {
+            donut.style.background = 'conic-gradient(#e2e8f0 0 100%)';
+        } else {
+            let cursor = 0;
+            const segments = [];
+            months.forEach(function (m, idx) {
+                if (!m.count) return;
+                const portion = (m.count / total) * 100;
+                const next = cursor + portion;
+                const color = palette[idx % palette.length];
+                segments.push(`${color} ${cursor.toFixed(2)}% ${next.toFixed(2)}%`);
+                cursor = next;
+            });
+            donut.style.background = `conic-gradient(${segments.join(', ')})`;
+        }
+
+        legendRoot.innerHTML = months.map(function (m, idx) {
+            const color = palette[idx % palette.length];
+            const pct = total > 0 ? Math.round((m.count / total) * 100) : 0;
+            return `
+                <div class="d2w-month-card">
+                    <div class="d2w-month-head">
+                        <span class="d2w-month-dot" style="background:${color};"></span>
+                        <span>${m.label}</span>
+                    </div>
+                    <div class="d2w-month-meta">${m.count} (${pct}%)</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function setupAnalyticsScrollButtons() {
+        bindHorizontalScroller('d2w24hLeftBtn', 'd2w24hRightBtn', 'd2w24hScroll', 260);
+        bindHorizontalScroller('d2w12mLeftBtn', 'd2w12mRightBtn', 'd2w12mLegendScroll', 320);
+    }
+
+    function bindHorizontalScroller(leftId, rightId, scrollId, step) {
+        const leftBtn = document.getElementById(leftId);
+        const rightBtn = document.getElementById(rightId);
+        const scrollEl = document.getElementById(scrollId);
+        if (!leftBtn || !rightBtn || !scrollEl) return;
+
+        function updateState() {
+            const maxLeft = Math.max(0, scrollEl.scrollWidth - scrollEl.clientWidth);
+            leftBtn.disabled = scrollEl.scrollLeft <= 1;
+            rightBtn.disabled = scrollEl.scrollLeft >= (maxLeft - 1);
+        }
+
+        if (!leftBtn.dataset.bound) {
+            leftBtn.addEventListener('click', function () {
+                scrollEl.scrollBy({ left: -step, behavior: 'smooth' });
+            });
+            leftBtn.dataset.bound = '1';
+        }
+
+        if (!rightBtn.dataset.bound) {
+            rightBtn.addEventListener('click', function () {
+                scrollEl.scrollBy({ left: step, behavior: 'smooth' });
+            });
+            rightBtn.dataset.bound = '1';
+        }
+
+        if (!scrollEl.dataset.boundScroll) {
+            scrollEl.addEventListener('scroll', updateState, { passive: true });
+            scrollEl.dataset.boundScroll = '1';
+        }
+
+        updateState();
     }
 
     // Refresh counters if data changes in another tab.
