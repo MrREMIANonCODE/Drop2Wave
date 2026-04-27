@@ -1117,16 +1117,11 @@ function renderOrders() {
                 <td class="orders-col-status"><span class="status-badge status-${order.status}">${statusText}</span></td>
                 <td class="orders-col-action">
                     <div class="orders-actions-wrap">
-                        <button class="orders-action-btn orders-action-invoice toggle-order-details" data-order-id="${escapeHtml(orderId)}" type="button"><i class="far fa-eye"></i> Invoice</button>
+                        <button class="orders-action-btn orders-action-invoice open-order-invoice" data-order-id="${escapeHtml(orderId)}" type="button"><i class="far fa-eye"></i> Invoice</button>
                         <button class="orders-action-btn orders-action-edit orders-edit-btn" data-order-id="${escapeHtml(orderId)}" type="button"><i class="far fa-edit"></i> Edit</button>
                         <button class="orders-action-btn orders-action-update quick-update-btn" data-order-id="${escapeHtml(orderId)}" data-current-status="${escapeHtml(order.status)}" type="button"><i class="fas fa-sync-alt"></i> Update</button>
                         <button class="orders-action-btn orders-action-delete delete-order-btn" data-order-id="${escapeHtml(orderId)}" type="button"><i class="far fa-trash-alt"></i> Delete</button>
                     </div>
-                </td>
-            </tr>
-            <tr class="order-detail-row d-none" data-order-id="${escapeHtml(orderId)}">
-                <td colspan="10">
-                    <div class="order-inline-detail">${renderOrderBody(order, true)}</div>
                 </td>
             </tr>
         `;
@@ -1164,17 +1159,10 @@ function renderOrders() {
         renderOrders();
     });
 
-    container.off('click', '.toggle-order-details').on('click', '.toggle-order-details', function() {
-        const $row = $(this).closest('tr').next('.order-detail-row');
-        const open = !$row.hasClass('d-none');
-
-        if (open) {
-            $row.addClass('d-none');
-            $(this).text('Details');
-        } else {
-            $row.removeClass('d-none');
-            $(this).text('Hide');
-        }
+    container.off('click', '.open-order-invoice').on('click', '.open-order-invoice', function() {
+        const orderId = String($(this).data('order-id') || '').trim();
+        if (!orderId) return;
+        window.location.href = `order/invoice.html?id=${encodeURIComponent(orderId)}`;
     });
 
     container.off('click', '.apply-status').on('click', '.apply-status', function() {

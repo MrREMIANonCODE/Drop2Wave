@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="../">
+    <title>Invoice - Drop2Wave Admin</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="../assets/logo.jpeg">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../frontend/css/admin-theme.css" rel="stylesheet">
+    <link href="../frontend/css/admin-pages.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid admin-shell">
+        <div class="admin-layout">
+            <aside class="side-nav">
+                <div class="side-nav-inner">
+                    <div class="side-top side-logo-wrap">
+                        <img src="../assets/logo.jpeg" alt="Drop2Wave" class="side-logo">
+                        <button type="button" class="sidebar-toggle d-none d-lg-inline-flex" id="sidebarToggle" aria-label="Collapse sidebar">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+
+                    <div class="profile-card">
+                        <div class="profile-avatar">A</div>
+                        <div class="profile-text">
+                            <div class="profile-name">Admin Super Admin</div>
+                            <div class="profile-role">super-admin</div>
+                        </div>
+                    </div>
+
+                    <div class="side-scroll">
+                        <ul class="nav flex-column">
+                            <li class="nav-item"><a class="nav-link" href="index.html"><i class="fas fa-columns nav-icon"></i><span class="nav-label">Dashboard</span></a></li>
+                            <li class="nav-item"><a class="nav-link" href="categories.html"><i class="fas fa-th-large nav-icon"></i><span class="nav-label">Categories</span></a></li>
+                            <li class="nav-item"><a class="nav-link" href="products.html"><i class="fas fa-box-open nav-icon"></i><span class="nav-label">Products</span></a></li>
+                            <li class="nav-item"><a class="nav-link" href="reviews.html"><i class="fas fa-star nav-icon"></i><span class="nav-label">Reviews</span></a></li>
+                            <li class="nav-item"><a class="nav-link active" href="orders.html"><i class="fas fa-shopping-bag nav-icon"></i><span class="nav-label">Orders</span></a></li>
+                        </ul>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="main-panel">
+                <div class="invoice-page-wrap" id="invoicePageRoot">
+                    <div class="invoice-page-toolbar">
+                        <a href="orders.html?view=all" class="invoice-back-link"><i class="fas fa-arrow-left"></i> Back To Order</a>
+                        <button type="button" class="invoice-print-btn" id="invoicePrintBtn"><i class="fas fa-print"></i> Print</button>
+                    </div>
+
+                    <div class="invoice-stage" id="invoiceStage">
+                        <div class="invoice-sheet" id="invoiceSheet">
+                            <div class="invoice-sheet-header">
+                                <div class="invoice-brand-block">
+                                    <img src="../assets/logo.jpeg" alt="Drop2Wave" class="invoice-logo">
+                                    <div class="invoice-brand-text">
+                                        <div class="invoice-company">Drop2Wave</div>
+                                        <div class="invoice-payment">Payment Method: COD</div>
+                                    </div>
+                                </div>
+                                <div class="invoice-ribbon"><span>INVOICE</span></div>
+                            </div>
+
+                            <div class="invoice-info-grid">
+                                <div class="invoice-info-card">
+                                    <div class="invoice-info-label">Invoice From:</div>
+                                    <div class="invoice-info-lines">
+                                        <div id="invoiceFromName">Drop2Wave</div>
+                                        <div id="invoiceFromPhone">01805550515</div>
+                                        <div id="invoiceFromEmail">drop2live.bd@gmail.com</div>
+                                        <div id="invoiceFromAddress">Monsurabad, Mohammadpur, Dhaka, Bangladesh, 1207</div>
+                                    </div>
+                                </div>
+                                <div class="invoice-info-card invoice-info-right">
+                                    <div class="invoice-meta-lines">
+                                        <div><span class="invoice-meta-title">Invoice ID :</span> <strong id="invoiceNumber">#-</strong></div>
+                                        <div><span class="invoice-meta-title">Invoice Date :</span> <strong id="invoiceDate">-</strong></div>
+                                    </div>
+                                    <div class="invoice-to-block">
+                                        <div class="invoice-info-label">Invoice To:</div>
+                                        <div id="invoiceCustomerName">-</div>
+                                        <div id="invoiceCustomerAddress">-</div>
+                                        <div id="invoiceCustomerPhone">-</div>
+                                        <div id="invoiceCustomerArea">-</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="invoice-items-table-wrap">
+                                <table class="table table-bordered invoice-items-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:54px;">SL</th>
+                                            <th>Product</th>
+                                            <th style="width:92px;">Price</th>
+                                            <th style="width:70px;">Qty</th>
+                                            <th style="width:92px;">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="invoiceItemsTbody"></tbody>
+                                </table>
+                            </div>
+
+                            <div class="invoice-summary-wrap">
+                                <div class="invoice-summary-box">
+                                    <div class="invoice-summary-row"><span>SubTotal</span><strong id="invoiceSubtotal">৳0.00</strong></div>
+                                    <div class="invoice-summary-row"><span>Shipping(+)</span><strong id="invoiceShipping">৳0.00</strong></div>
+                                    <div class="invoice-summary-row"><span>Discount(-)</span><strong id="invoiceDiscount">৳0.00</strong></div>
+                                    <div class="invoice-summary-row invoice-summary-total"><span>Final Total</span><strong id="invoiceTotal">৳0.00</strong></div>
+                                </div>
+                            </div>
+
+                            <div class="invoice-footer-block">
+                                <div class="invoice-terms-title">Terms &amp; Conditions</div>
+                                <div class="invoice-terms-text">
+                                    Customer Agree to the website
+                                    <a href="../terms-and-conditions.html" class="invoice-policy-link">Terms and Conditions</a>,
+                                    <a href="../return-replacement-policy.html" class="invoice-policy-link">Return Policy</a>
+                                </div>
+                                <div class="invoice-note">* This is a computer generated invoice, does not require any signature.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="../frontend/lib/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="../frontend/js/admin-store.js"></script>
+    <script src="../frontend/js/universal-data.js"></script>
+    <script src="../frontend/js/admin-shell.js"></script>
+    <script src="../frontend/js/admin-order-invoice.js"></script>
+</body>
+</html>
