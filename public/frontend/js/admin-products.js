@@ -19,6 +19,10 @@ $(document).ready(async function() {
     const $closeProductFormBtn = $('#closeProductFormBtn');
     const $productSearchInput = $('#productSearchInput');
     const $status = $('#statusMessage');
+    const editState = {
+        productId: null,
+        isNew: null
+    };
     
     await AdminStore.syncFromCloud();
 
@@ -28,6 +32,7 @@ $(document).ready(async function() {
     initRichTextEditors();
     setupProductPanelToggle();
     setupProductSearch();
+    initEditModeFromUrl();
     setupNewProductHandler();
     setupTotalProductHandler();
     setupLogout();
@@ -333,6 +338,154 @@ $(document).ready(async function() {
         return found ? found.name : '-';
     }
 
+    function getProductById(productId) {
+        return AdminStore.getProducts().find(p => String(p.id) === String(productId)) || null;
+    }
+
+    function getProductEditTarget(product) {
+        return product && product.isNew === true ? 'new' : 'total';
+    }
+
+    function getEditParamProductId() {
+        try {
+            const params = new URLSearchParams(window.location.search || '');
+            return String(params.get('edit') || '').trim();
+        } catch (err) {
+            return '';
+        }
+    }
+
+    function setEditMode(product) {
+        const target = getProductEditTarget(product);
+        editState.productId = String(product.id);
+        editState.isNew = target === 'new';
+
+        const prefix = editState.isNew ? '#newProduct' : '#totalProduct';
+        const formTitle = editState.isNew ? 'Edit New Product' : 'Edit Total Product';
+        const saveLabel = editState.isNew ? 'Update New Product' : 'Update Total Product';
+
+        const formPanel = editState.isNew ? $('#newProductForm').closest('.d2w-add-card') : $('#totalProductForm').closest('.d2w-add-card');
+        const saveLabelEl = editState.isNew ? $('#newProductSaveLabel') : $('#totalProductSaveLabel');
+        const cancelBtn = editState.isNew ? $('#newProductCancelBtn') : $('#totalProductCancelBtn');
+
+        if (formPanel.length) {
+            formPanel.find('h6').first().text(formTitle);
+        }
+
+        if (saveLabelEl.length) saveLabelEl.text(saveLabel);
+        if (cancelBtn.length) cancelBtn.removeClass('d-none');
+
+        $(prefix + 'Name').val(product.name || '');
+        $(prefix + 'CategoryId').val(String(product.categoryId || ''));
+        $(prefix + 'Price').val(Number(product.price || 0) || '');
+        $(prefix + 'OldPrice').val(Number(product.oldPrice || 0) || '');
+        $(prefix + 'SortOrder').val(Number(product.sortOrder || 0) || 0);
+        $(prefix + 'Url').val(product.productUrl || '');
+        $(prefix + 'IsActive').prop('checked', product.isActive !== false);
+        $(prefix + 'Description').val(product.description || '');
+        setEditorHtmlByTarget(prefix + 'Description', product.description || '');
+
+        const imageField = prefix + 'Image';
+        const imagePreview = prefix + 'ImagePreview';
+        const imagePreviewImg = prefix + 'ImagePreviewImg';
+        if (product.image) {
+            $(imageField).val(product.image);
+            $(imagePreviewImg).attr('src', product.image);
+            $(imagePreview).show();
+        }
+
+        const gallerySelector = prefix + 'GalleryImages';
+        const galleryPreview = prefix + 'GalleryPreview';
+        setGalleryList(gallerySelector, Array.isArray(product.galleryImages) ? product.galleryImages : []);
+        renderGalleryPreview(galleryPreview, gallerySelector);
+
+        window.requestAnimationFrame(() => {
+            const top = formPanel.length ? formPanel.offset().top - 12 : 0;
+            if (top > 0) window.scrollTo({ top, behavior: 'smooth' });
+        });
+    }
+
+    function clearEditMode() {
+        editState.productId = null;
+        editState.isNew = null;
+        $('#newProductForm, #totalProductForm')[0].reset();
+        $('#newProductIsActive, #totalProductIsActive').prop('checked', true);
+        $('#newProductSaveLabel').text('Save New Product');
+        $('#totalProductSaveLabel').text('Save Total Product');
+        $('#newProductCancelBtn, #totalProductCancelBtn').addClass('d-none');
+        $('h6:contains("Edit New Product"), h6:contains("Edit Total Product")').each(function() {
+            if ($(this).text().indexOf('New Product') !== -1) {
+                $(this).html('<i class="fas fa-rocket text-primary mr-1"></i> New Products Upload');
+            } else if ($(this).text().indexOf('Total Product') !== -1 || $(this).text().indexOf('Products') !== -1) {
+                $(this).html('<i class="fas fa-boxes text-success mr-1"></i> All Products Upload');
+            }
+        });
+    }
+
+    function initEditModeFromUrl() {
+        const editId = getEditParamProductId();
+        if (!editId) return;
+
+        const product = getProductById(editId);
+        if (!product) {
+            showStatus('The product to edit could not be found.', 'warning');
+            return;
+        }
+
+        setEditMode(product);
+    }
+
+    function formatProductPrice(value) {
+        const amount = Number(value || 0);
+        return `৳${amount.toFixed(2)}`;
+    }
+
+    function getProductStatusLabel(product) {
+        return product.isActive === false ? 'Inactive' : 'Active';
+    }
+
+    function getProductStatusClass(product) {
+        return product.isActive === false ? 'is-inactive' : 'is-active';
+    }
+
+    function getProductDetailUrl(productId) {
+        return `../product-details.html?id=${encodeURIComponent(productId)}`;
+    }
+
+    function getProductEditUrl(productId) {
+        return `products/add.html?edit=${encodeURIComponent(productId)}`;
+    }
+
+    function renderProductActions(prod) {
+        const viewUrl = `products/view.html?id=${encodeURIComponent(prod.id)}`;
+        const editUrl = getProductEditUrl(prod.id);
+
+        return `
+            <div class="admin-action-group" aria-label="Product actions">
+                <a class="admin-action-link admin-action-view" href="${viewUrl}" title="View product" aria-label="View product">
+                    <i class="far fa-eye"></i>
+                </a>
+                <a class="admin-action-link admin-action-edit" href="${editUrl}" title="Edit product" aria-label="Edit product">
+                    <i class="far fa-edit"></i>
+                </a>
+                <button type="button" class="admin-action-btn admin-action-delete del-product" data-id="${prod.id}" title="Delete product" aria-label="Delete product">
+                    <i class="far fa-trash-alt"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    function loadCategoryOptions() {
+        const categories = AdminStore.getCategories();
+        const option = '<option value="">Select a category</option>' + 
+            categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
+        
+        $('#newProductCategoryId').html(option);
+        $('#totalProductCategoryId').html(option);
+    }
+
+
+
     function loadCategoryOptions() {
         const categories = AdminStore.getCategories();
         const option = '<option value="">Select a category</option>' + 
@@ -360,16 +513,19 @@ $(document).ready(async function() {
         $table.html(products.map((prod, idx) => `
             <tr>
                 <td>${idx + 1}</td>
-                <td>${prod.image ? `<img src="${prod.image}" alt="${prod.name}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;">` : '-'}</td>
-                <td>${prod.name || '-'}</td>
+                <td>${prod.image ? `<img src="${prod.image}" alt="${prod.name}" class="admin-product-thumb">` : '-'}</td>
+                <td><div class="admin-product-name">${prod.name || '-'}</div>${prod.sku ? `<span class="admin-product-sku">SKU: ${prod.sku}</span>` : ''}</td>
                 <td>${getCategoryNameById(prod.categoryId)}</td>
-                <td>৳${Number(prod.price || 0).toFixed(2)}</td>
-                <td><span class="badge badge-info">Yes</span></td>
-                <td><span class="badge badge-${prod.isActive === false ? 'secondary' : 'success'}">${prod.isActive === false ? 'Inactive' : 'Active'}</span></td>
-                <td>${prod.sortOrder || 0}</td>
                 <td>
-                    <button class="btn btn-sm btn-danger del-new-prod" data-id="${prod.id}">Delete</button>
+                    <div class="admin-product-price">
+                        <span class="admin-product-price-now">${formatProductPrice(prod.price)}</span>
+                        ${Number(prod.oldPrice || 0) > 0 ? `<span class="admin-product-price-old">${formatProductPrice(prod.oldPrice)}</span>` : ''}
+                    </div>
                 </td>
+                <td><span class="badge badge-info">Yes</span></td>
+                <td><span class="admin-status-pill ${getProductStatusClass(prod)}">${getProductStatusLabel(prod)}</span></td>
+                <td>${prod.sortOrder || 0}</td>
+                <td>${renderProductActions(prod)}</td>
             </tr>
         `).join(''));
     }
@@ -392,16 +548,19 @@ $(document).ready(async function() {
         $table.html(products.map((prod, idx) => `
             <tr>
                 <td>${idx + 1}</td>
-                <td>${prod.image ? `<img src="${prod.image}" alt="${prod.name}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;">` : '-'}</td>
-                <td>${prod.name || '-'}</td>
+                <td>${prod.image ? `<img src="${prod.image}" alt="${prod.name}" class="admin-product-thumb">` : '-'}</td>
+                <td><div class="admin-product-name">${prod.name || '-'}</div>${prod.sku ? `<span class="admin-product-sku">SKU: ${prod.sku}</span>` : ''}</td>
                 <td>${getCategoryNameById(prod.categoryId)}</td>
-                <td>৳${Number(prod.price || 0).toFixed(2)}</td>
-                <td><span class="badge badge-secondary">No</span></td>
-                <td><span class="badge badge-${prod.isActive === false ? 'secondary' : 'success'}">${prod.isActive === false ? 'Inactive' : 'Active'}</span></td>
-                <td>${prod.sortOrder || 0}</td>
                 <td>
-                    <button class="btn btn-sm btn-danger del-total-prod" data-id="${prod.id}">Delete</button>
+                    <div class="admin-product-price">
+                        <span class="admin-product-price-now">${formatProductPrice(prod.price)}</span>
+                        ${Number(prod.oldPrice || 0) > 0 ? `<span class="admin-product-price-old">${formatProductPrice(prod.oldPrice)}</span>` : ''}
+                    </div>
                 </td>
+                <td><span class="badge badge-secondary">No</span></td>
+                <td><span class="admin-status-pill ${getProductStatusClass(prod)}">${getProductStatusLabel(prod)}</span></td>
+                <td>${prod.sortOrder || 0}</td>
+                <td>${renderProductActions(prod)}</td>
             </tr>
         `).join(''));
     }
@@ -428,7 +587,7 @@ $(document).ready(async function() {
         }
 
         const product = {
-            id: 'prod_' + Date.now(),
+            id: editState.productId && editState.isNew === true ? editState.productId : 'prod_' + Date.now(),
             name,
             categoryId,
             price,
@@ -445,28 +604,40 @@ $(document).ready(async function() {
 
         try {
             localStorage.setItem('drop2wave_bootstrap_disabled', 'true');
-            AdminStore.addProduct(product);
-            showStatus('New product added successfully!', 'success');
+            if (editState.productId && editState.isNew === true) {
+                AdminStore.updateProduct(editState.productId, product);
+                showStatus('New product updated successfully!', 'success');
+            } else {
+                AdminStore.addProduct(product);
+                showStatus('New product added successfully!', 'success');
+            }
             $newProdForm[0].reset();
             $('#newProductIsActive').prop('checked', true);
             setEditorHtmlByTarget('#newProductDescription', '');
             $('#newProductImagePreview').hide();
             setGalleryList('#newProductGalleryImages', []);
             renderGalleryPreview('#newProductGalleryPreview', '#newProductGalleryImages');
+            clearEditMode();
             loadNewProducts();
         } catch (err) {
             if (isQuotaExceededError(err)) {
                 // Final fallback: save product without image rather than blocking save completely.
                 try {
                     const fallbackProduct = { ...product, image: '', coverImage: '', galleryImages: [] };
-                    AdminStore.addProduct(fallbackProduct);
-                    showStatus('Storage full: product saved without image. Delete old image-heavy items and re-upload image.', 'warning');
+                    if (editState.productId && editState.isNew === true) {
+                        AdminStore.updateProduct(editState.productId, fallbackProduct);
+                        showStatus('Storage full: product updated without image. Delete old image-heavy items and re-upload image.', 'warning');
+                    } else {
+                        AdminStore.addProduct(fallbackProduct);
+                        showStatus('Storage full: product saved without image. Delete old image-heavy items and re-upload image.', 'warning');
+                    }
                     $newProdForm[0].reset();
                     $('#newProductIsActive').prop('checked', true);
                     setEditorHtmlByTarget('#newProductDescription', '');
                     $('#newProductImagePreview').hide();
                     setGalleryList('#newProductGalleryImages', []);
                     renderGalleryPreview('#newProductGalleryPreview', '#newProductGalleryImages');
+                    clearEditMode();
                     loadNewProducts();
                 } catch (fallbackErr) {
                     showStatus('Storage is full. Please delete some products/categories with images and try again.', 'danger');
@@ -515,7 +686,7 @@ $(document).ready(async function() {
         }
 
         const product = {
-            id: 'prod_' + Date.now(),
+            id: editState.productId && editState.isNew === false ? editState.productId : 'prod_' + Date.now(),
             name,
             categoryId,
             price,
@@ -532,27 +703,39 @@ $(document).ready(async function() {
 
         try {
             localStorage.setItem('drop2wave_bootstrap_disabled', 'true');
-            AdminStore.addProduct(product);
-            showStatus('Total product added successfully!', 'success');
+            if (editState.productId && editState.isNew === false) {
+                AdminStore.updateProduct(editState.productId, product);
+                showStatus('Total product updated successfully!', 'success');
+            } else {
+                AdminStore.addProduct(product);
+                showStatus('Total product added successfully!', 'success');
+            }
             $totalProdForm[0].reset();
             $('#totalProductIsActive').prop('checked', true);
             setEditorHtmlByTarget('#totalProductDescription', '');
             $('#totalProductImagePreview').hide();
             setGalleryList('#totalProductGalleryImages', []);
             renderGalleryPreview('#totalProductGalleryPreview', '#totalProductGalleryImages');
+            clearEditMode();
             loadTotalProducts();
         } catch (err) {
             if (isQuotaExceededError(err)) {
                 try {
                     const fallbackProduct = { ...product, image: '', coverImage: '', galleryImages: [] };
-                    AdminStore.addProduct(fallbackProduct);
-                    showStatus('Storage full: product saved without image. Delete old image-heavy items and re-upload image.', 'warning');
+                    if (editState.productId && editState.isNew === false) {
+                        AdminStore.updateProduct(editState.productId, fallbackProduct);
+                        showStatus('Storage full: product updated without image. Delete old image-heavy items and re-upload image.', 'warning');
+                    } else {
+                        AdminStore.addProduct(fallbackProduct);
+                        showStatus('Storage full: product saved without image. Delete old image-heavy items and re-upload image.', 'warning');
+                    }
                     $totalProdForm[0].reset();
                     $('#totalProductIsActive').prop('checked', true);
                     setEditorHtmlByTarget('#totalProductDescription', '');
                     $('#totalProductImagePreview').hide();
                     setGalleryList('#totalProductGalleryImages', []);
                     renderGalleryPreview('#totalProductGalleryPreview', '#totalProductGalleryImages');
+                    clearEditMode();
                     loadTotalProducts();
                 } catch (fallbackErr) {
                     showStatus('Storage is full. Please delete some products/categories with images and try again.', 'danger');
@@ -578,6 +761,28 @@ $(document).ready(async function() {
             saveTotalProduct();
         });
     }
+
+    $(document).on('click', '#newProductCancelBtn', function() {
+        clearEditMode();
+        loadNewProducts();
+    });
+
+    $(document).on('click', '#totalProductCancelBtn', function() {
+        clearEditMode();
+        loadTotalProducts();
+    });
+
+    $(document).on('click', '.edit-product', function(e) {
+        e.preventDefault();
+        const id = String($(this).data('id') || '');
+        const product = getProductById(id);
+        if (!product) {
+            showStatus('Product not found for editing.', 'warning');
+            return;
+        }
+
+        setEditMode(product);
+    });
 
     function pickProductFromForm(isNewTarget) {
         const prefix = isNewTarget ? '#newProduct' : '#totalProduct';
@@ -623,6 +828,16 @@ $(document).ready(async function() {
             AdminStore.deleteProduct(id);
             showStatus('New product deleted', 'info');
             loadNewProducts();
+        }
+    });
+
+    $(document).on('click', '.del-product', function() {
+        const id = $(this).data('id');
+        if (confirm('Delete this product?')) {
+            AdminStore.deleteProduct(id);
+            showStatus('Product deleted', 'info');
+            loadNewProducts();
+            loadTotalProducts();
         }
     });
 
@@ -751,6 +966,8 @@ $(document).ready(async function() {
             setTimeout(() => $status.fadeOut().addClass('d-none'), 3000);
         }
     }
+
+
 });
 
 

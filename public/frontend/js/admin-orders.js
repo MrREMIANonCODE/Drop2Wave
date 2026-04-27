@@ -781,6 +781,154 @@ function formatOrderTime(order) {
     return String(order.orderTime || '-');
 }
 
+function formatOrderDateWithAge(order) {
+    const dt = getOrderDateValue(order);
+    if (!dt) return { primary: '-', secondary: '' };
+
+    const primary = dt.toLocaleString('en-BD', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+
+    const diffMs = Math.max(0, Date.now() - dt.getTime());
+    const diffMin = Math.floor(diffMs / 60000);
+    let secondary = '';
+
+    if (diffMin < 1) {
+        secondary = 'just now';
+    } else if (diffMin < 60) {
+        secondary = `${diffMin} minute${diffMin === 1 ? '' : 's'} ago`;
+    } else {
+        const diffHr = Math.floor(diffMin / 60);
+        if (diffHr < 24) {
+            secondary = `${diffHr} hour${diffHr === 1 ? '' : 's'} ago`;
+        } else {
+            const diffDay = Math.floor(diffHr / 24);
+            secondary = `${diffDay} day${diffDay === 1 ? '' : 's'} ago`;
+        }
+    }
+
+    return { primary, secondary };
+}
+
+function getOrderIpAddress(order) {
+    const candidate = order && (
+        order.ipAddress ||
+        order.ip ||
+        order.clientIp ||
+        (order.meta && order.meta.ipAddress) ||
+        (order.customer && order.customer.ipAddress)
+    );
+    return String(candidate || '-');
+}
+
+function getTrackingText(order) {
+    const tracking = order && (
+        order.trackingNumber ||
+        order.trackingId ||
+        order.tracking ||
+        (order.courier && (order.courier.tracking || order.courier.trackingId))
+    );
+    return String(tracking || '-');
+}
+
+function resolveImageUrlForAdmin(rawValue) {
+    const value = String(rawValue || '').trim();
+    if (!value) return '';
+
+    if (/^(https?:)?\/\//i.test(value) || value.startsWith('data:') || value.startsWith('blob:')) {
+        return value;
+    }
+
+    if (value.startsWith('/')) {
+        return value;
+    }
+
+    if (value.startsWith('./')) {
+        return `../${value.slice(2)}`;
+    }
+
+    if (value.startsWith('../')) {
+        return value;
+    }
+
+    // Most storefront image paths are relative to /public (e.g., uploads/foo.jpg, assets/x.png)
+    return `../${value}`;
+}
+
+function getProductCatalogImage(item) {
+    if (typeof AdminStore === 'undefined' || typeof AdminStore.getProducts !== 'function') {
+        return '';
+    }
+
+    const products = AdminStore.getProducts() || [];
+    const itemId = String(item && item.id ? item.id : '').trim();
+    const itemName = String(item && item.name ? item.name : '').trim().toLowerCase();
+
+    let product = null;
+    if (itemId) {
+        product = products.find(p => String(p && p.id ? p.id : '') === itemId) || null;
+    }
+
+    if (!product && itemName) {
+        product = products.find(p => String(p && p.name ? p.name : '').trim().toLowerCase() === itemName) || null;
+    }
+
+    if (!product) return '';
+
+    const candidate =
+        product.image ||
+        product.coverImage ||
+        product.thumbnail ||
+        (Array.isArray(product.galleryImages) ? product.galleryImages.find(Boolean) : '') ||
+        '';
+
+    return resolveImageUrlForAdmin(candidate);
+}
+
+function getBestOrderItemImage(item) {
+    const direct =
+        (item && item.image) ||
+        (item && item.productImage) ||
+        (item && item.coverImage) ||
+        (item && item.thumbnail) ||
+        '';
+
+    const directResolved = resolveImageUrlForAdmin(direct);
+    if (directResolved) return directResolved;
+
+    return getProductCatalogImage(item);
+}
+
+function getOrderMainImage(order) {
+    const items = Array.isArray(order && order.items) ? order.items : [];
+    for (let i = 0; i < items.length; i += 1) {
+        const src = getBestOrderItemImage(items[i]);
+        if (src) return src;
+    }
+    return '';
+}
+
+function promptNextStatus(currentStatus) {
+    const allowed = ['new', 'complete', 'no_response', 'hold', 'cancelled', 'in_courier', 'delivered'];
+    const input = prompt(
+        'Set new status:\nnew, complete, no_response, hold, cancelled, in_courier, delivered',
+        String(currentStatus || 'new')
+    );
+    if (input === null) return null;
+
+    const next = String(input || '').trim().toLowerCase();
+    if (!allowed.includes(next)) {
+        alert('Invalid status. Use one of: new, complete, no_response, hold, cancelled, in_courier, delivered');
+        return null;
+    }
+    return next;
+}
+
 function escapeHtml(text) {
     return String(text || '')
         .replace(/&/g, '&amp;')
@@ -824,47 +972,43 @@ function renderOrders() {
     const rows = shown.map((order, idx) => {
         const orderId = getOrderKey(order) || '-';
         const invoiceNo = getInvoiceNumber(order);
+        const serial = idx + 1;
+        const trackingText = getTrackingText(order);
+        const imageSrc = getOrderMainImage(order);
         const statusText = getStatusText(order.status);
         const customerName = String(order.customer?.name || '-');
         const phone = String(order.customer?.phone || '-');
-        const area = getDeliveryAreaText(order.customer?.deliveryArea || '');
-        const itemSummary = getItemSummary(order);
+        const address = String(order.customer?.address || '-');
+        const ipAddress = getOrderIpAddress(order);
         const total = Number(order.pricing?.total || 0).toLocaleString();
-        const serial = idx + 1;
-
-        const quickMove = currentView === 'all' ? `
-            <div class="d-flex align-items-center" style="gap:6px;">
-                <select class="form-control form-control-sm quick-status" data-order-id="${escapeHtml(orderId)}" style="min-width:132px; height:30px; font-size:12px;">
-                    <option value="new" ${order.status === 'new' ? 'selected' : ''}>New</option>
-                    <option value="complete" ${order.status === 'complete' ? 'selected' : ''}>Complete</option>
-                    <option value="no_response" ${order.status === 'no_response' ? 'selected' : ''}>No Response</option>
-                    <option value="hold" ${order.status === 'hold' ? 'selected' : ''}>Hold</option>
-                    <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancel</option>
-                    <option value="in_courier" ${order.status === 'in_courier' ? 'selected' : ''}>In Courier</option>
-                    <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Delivered</option>
-                </select>
-                <button class="btn btn-outline-primary btn-sm apply-status" data-order-id="${escapeHtml(orderId)}" style="height:30px; padding:4px 8px;">Apply</button>
-            </div>
-        ` : '<span class="text-muted" style="font-size:12px;">-</span>';
+        const dateMeta = formatOrderDateWithAge(order);
 
         return `
             <tr>
-                <td>${serial}</td>
-                <td><strong>${escapeHtml(invoiceNo)}</strong></td>
-                <td>
-                    <div style="font-weight:600;">${escapeHtml(customerName)}</div>
-                    <div class="text-muted" style="font-size:11px;">${escapeHtml(phone)}</div>
+                <td class="orders-col-sl">${serial}</td>
+                <td class="orders-col-image">
+                    ${imageSrc ? `<img src="${escapeHtml(imageSrc)}" alt="Order product" class="orders-thumb">` : '<div class="orders-thumb orders-thumb-placeholder"><i class="fas fa-image"></i></div>'}
                 </td>
-                <td style="min-width:240px;">${escapeHtml(itemSummary)}</td>
-                <td>${escapeHtml(area)}</td>
-                <td><strong>Tk ${total}</strong></td>
-                <td>${escapeHtml(formatOrderTime(order))}</td>
-                <td><span class="status-badge status-${order.status}">${statusText}</span></td>
-                <td>${quickMove}</td>
-                <td>
-                    <div class="d-flex align-items-center" style="gap:6px;">
-                        <button class="btn btn-outline-secondary btn-sm toggle-order-details" data-order-id="${escapeHtml(orderId)}" style="height:30px; padding:4px 8px;">Details</button>
-                        <button class="btn btn-outline-danger btn-sm delete-order-btn" data-order-id="${escapeHtml(orderId)}" style="height:30px; padding:4px 8px;">Delete</button>
+                <td class="orders-col-invoice"><strong>${escapeHtml(invoiceNo)}</strong></td>
+                <td class="orders-col-tracking">${escapeHtml(trackingText)}</td>
+                <td class="orders-col-date">
+                    <div class="orders-date-main">${escapeHtml(dateMeta.primary)}</div>
+                    <div class="orders-date-sub">${escapeHtml(dateMeta.secondary)}</div>
+                </td>
+                <td class="orders-col-customer">
+                    <div class="orders-customer-name">${escapeHtml(customerName)}</div>
+                    <div class="orders-customer-address">${escapeHtml(address)}</div>
+                    <div class="orders-customer-phone">${escapeHtml(phone)}</div>
+                </td>
+                <td class="orders-col-ip">${escapeHtml(ipAddress)}</td>
+                <td class="orders-col-amount"><strong>Tk ${total}</strong></td>
+                <td class="orders-col-status"><span class="status-badge status-${order.status}">${statusText}</span></td>
+                <td class="orders-col-action">
+                    <div class="orders-actions-wrap">
+                        <button class="orders-action-btn orders-action-invoice toggle-order-details" data-order-id="${escapeHtml(orderId)}" type="button"><i class="far fa-eye"></i> Invoice</button>
+                        <button class="orders-action-btn orders-action-edit toggle-order-details" data-order-id="${escapeHtml(orderId)}" type="button"><i class="far fa-edit"></i> Edit</button>
+                        <button class="orders-action-btn orders-action-update quick-update-btn" data-order-id="${escapeHtml(orderId)}" data-current-status="${escapeHtml(order.status)}" type="button"><i class="fas fa-sync-alt"></i> Update</button>
+                        <button class="orders-action-btn orders-action-delete delete-order-btn" data-order-id="${escapeHtml(orderId)}" type="button"><i class="far fa-trash-alt"></i> Delete</button>
                     </div>
                 </td>
             </tr>
@@ -877,20 +1021,20 @@ function renderOrders() {
     }).join('');
 
     container.html(`
-        <div class="table-responsive admin-table-wrap">
-            <table class="table table-hover table-bordered mb-0 admin-record-table">
+        <div class="table-responsive admin-table-wrap orders-table-wrap">
+            <table class="table table-hover table-bordered mb-0 admin-record-table orders-table">
                 <thead>
                     <tr>
-                        <th>SL</th>
-                        <th>Invoice No</th>
-                        <th>Customer</th>
-                        <th>Products</th>
-                        <th>Area</th>
-                        <th>Total</th>
-                        <th>Time</th>
-                        <th>Status</th>
-                        <th>Move</th>
-                        <th>Action</th>
+                        <th class="orders-col-sl">SL</th>
+                        <th class="orders-col-image">Image</th>
+                        <th class="orders-col-invoice">Invoice</th>
+                        <th class="orders-col-tracking">Tracking</th>
+                        <th class="orders-col-date">Date</th>
+                        <th class="orders-col-customer">Customer</th>
+                        <th class="orders-col-ip">IP Address</th>
+                        <th class="orders-col-amount">Amount</th>
+                        <th class="orders-col-status">Status</th>
+                        <th class="orders-col-action">Action</th>
                     </tr>
                 </thead>
                 <tbody>${rows}</tbody>
@@ -926,6 +1070,15 @@ function renderOrders() {
         const next = String($(this).closest('td').find('.quick-status').val() || '');
         if (!next) return;
         updateOrderStatus(orderId, next);
+    });
+
+    container.off('click', '.quick-update-btn').on('click', '.quick-update-btn', function() {
+        const orderId = String($(this).data('order-id') || '');
+        const currentStatus = String($(this).data('current-status') || 'new');
+        if (!orderId) return;
+        const nextStatus = promptNextStatus(currentStatus);
+        if (!nextStatus || nextStatus === currentStatus) return;
+        updateOrderStatus(orderId, nextStatus);
     });
 
     container.off('click', '.delete-order-btn').on('click', '.delete-order-btn', function() {
@@ -980,15 +1133,18 @@ function renderOrderBody(order, compactMode) {
 
         <div class="order-section">
             <div class="section-title"><i class="fas fa-box"></i> Items</div>
-            ${(order.items || []).map(item => `
+            ${(order.items || []).map(item => {
+                const itemImage = getBestOrderItemImage(item);
+                return `
                 <div class="product-item">
-                    ${item.image ? `<div class="product-image"><img src="${item.image}" alt="${item.name}" loading="lazy" onerror="this.style.display='none'"></div>` : `<div class="product-image"><i class="fas fa-image" style="color:#999;font-size:20px;"></i></div>`}
+                    ${itemImage ? `<div class="product-image"><img src="${itemImage}" alt="${item.name}" loading="lazy" onerror="this.style.display='none'"></div>` : `<div class="product-image"><i class="fas fa-image" style="color:#999;font-size:20px;"></i></div>`}
                     <div class="product-info">
                         <div class="product-name">${item.name}</div>
                         <div class="product-meta">Qty: <strong>${item.quantity}</strong> | Price: <strong>Tk ${item.price}</strong> | Total: <span class="product-price">Tk ${(Number(item.price || 0) * Number(item.quantity || 0)).toLocaleString()}</span></div>
                     </div>
                 </div>
-            `).join('')}
+            `;
+            }).join('')}
         </div>
 
         <div class="order-section">

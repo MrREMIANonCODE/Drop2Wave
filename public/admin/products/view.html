@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="../">
+    <title>Product Details - Drop2Wave Admin</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="../assets/logo.jpeg">
+    <link href="../frontend/css/style.css" rel="stylesheet">
+    <link href="../frontend/css/admin-theme.css" rel="stylesheet">
+    <link href="../frontend/css/admin-pages.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f3f6fb;
+        }
+
+        .detail-wrap {
+            max-width: 1220px;
+            margin: 24px auto;
+            padding: 0 12px;
+        }
+
+        .detail-card {
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid #e8edf3;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .detail-image-stage {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            background: #f8fafc;
+            height: 460px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .main-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .detail-slider-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            border: 0;
+            border-radius: 999px;
+            background: rgba(17, 24, 39, 0.66);
+            color: #fff;
+            z-index: 3;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+        }
+
+        .detail-slider-btn:hover {
+            background: rgba(17, 24, 39, 0.88);
+        }
+
+        #detailPrev { left: 10px; }
+        #detailNext { right: 10px; }
+
+        .detail-slider-dots {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            z-index: 3;
+        }
+
+        .detail-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            border: 0;
+            padding: 0;
+            background: rgba(255, 255, 255, 0.55);
+            cursor: pointer;
+        }
+
+        .detail-dot.active {
+            background: #f85606;
+        }
+
+        .thumb-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .thumb-item {
+            width: 72px;
+            height: 72px;
+            border-radius: 8px;
+            border: 2px solid #d1d5db;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .thumb-item.active {
+            border-color: #f85606;
+        }
+
+        .thumb-item:hover {
+            border-color: #f85606;
+        }
+
+        .detail-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .detail-name {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+            line-height: 1.3;
+        }
+
+        .detail-sku {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .detail-badge {
+            display: inline-block;
+            background: #f97316;
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            width: fit-content;
+            margin-top: 8px;
+        }
+
+        .price-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+
+        .price-now {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .price-old {
+            color: #ef4444;
+            text-decoration: line-through;
+            font-size: 18px;
+        }
+
+        .detail-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 8px 0;
+        }
+
+        .detail-item {
+            background: #f9fafb;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .detail-item-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .detail-item-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .detail-description {
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #374151;
+            margin: 8px 0;
+        }
+
+        .admin-header-top {
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 12px 0;
+            margin-bottom: 16px;
+            border-radius: 8px;
+        }
+
+        .admin-header-content {
+            max-width: 1220px;
+            margin: 0 auto;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .admin-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .admin-back-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: #f3f4f6;
+            color: #111827;
+            border: 1px solid #d1d5db;
+            text-decoration: none !important;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .admin-back-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .admin-header-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .admin-header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .admin-header-actions button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .admin-edit-btn {
+            background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .admin-edit-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .admin-delete-btn {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            text-decoration: none;
+        }
+
+        .admin-delete-btn:hover {
+            background: #fee2e2;
+        }
+
+        .admin-footer-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .admin-footer-actions button {
+            flex: 1;
+            padding: 12px 14px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .admin-footer-edit {
+            background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+            color: #fff;
+        }
+
+        .admin-footer-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
+        }
+
+        .admin-footer-delete {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .admin-footer-delete:hover {
+            background: #fee2e2;
+        }
+
+        .loading-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            font-size: 16px;
+            color: #6b7280;
+        }
+
+        @media (max-width: 768px) {
+            .detail-card {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .detail-row {
+                grid-template-columns: 1fr;
+            }
+
+            .admin-header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .admin-header-actions {
+                width: 100%;
+            }
+
+            .admin-header-actions button {
+                flex: 1;
+            }
+
+            .admin-footer-actions {
+                flex-direction: column;
+            }
+
+            .admin-footer-actions button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid admin-shell">
+        <div class="admin-layout">
+            <aside class="side-nav">
+                <div class="side-nav-inner">
+                    <div class="side-top side-logo-wrap">
+                        <img src="../assets/logo.jpeg" alt="Drop2Wave" class="side-logo">
+                        <button type="button" class="sidebar-toggle d-none d-lg-inline-flex" id="sidebarToggle" aria-label="Collapse sidebar">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+
+                    <div class="profile-card">
+                        <div class="profile-avatar">A</div>
+                        <div class="profile-text">
+                            <div class="profile-name">Admin Super Admin</div>
+                            <div class="profile-role">super-admin</div>
+                        </div>
+                    </div>
+
+                    <div class="side-scroll">
+                        <ul class="nav flex-column">
+                            <li class="nav-item"><a class="nav-link" href="index.html"><i class="fas fa-columns nav-icon"></i><span class="nav-label">Dashboard</span></a></li>
+                            <li class="nav-item"><a class="nav-link" href="categories.html"><i class="fas fa-th-large nav-icon"></i><span class="nav-label">Categories</span></a></li>
+                            <li class="nav-item"><a class="nav-link active" href="products.html"><i class="fas fa-box-open nav-icon"></i><span class="nav-label">Products</span></a></li>
+                            <li class="nav-item"><a class="nav-link" href="reviews.html"><i class="fas fa-star nav-icon"></i><span class="nav-label">Reviews</span></a></li>
+                            <li class="nav-item"><a class="nav-link" href="orders.html"><i class="fas fa-shopping-bag nav-icon"></i><span class="nav-label">Orders</span></a></li>
+                        </ul>
+                    </div>
+
+                </div>
+            </aside>
+
+            <main class="main-panel">
+                <div class="admin-header-top">
+                    <div class="admin-header-content">
+                        <div class="admin-header-left">
+                            <a href="products/manage.html" class="admin-back-btn" title="Back to manage">
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
+                            <span class="admin-header-title">Product Details</span>
+                        </div>
+                        <div class="admin-header-actions">
+                            <button type="button" class="admin-edit-btn" id="editProductBtn">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button type="button" class="admin-delete-btn" id="deleteProductBtn">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-wrap">
+                    <div id="productContent" class="loading-state">
+                        <i class="fas fa-spinner fa-spin"></i> Loading product details...
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="../frontend/lib/jquery/3.4.1/jquery.min.js"></script>
+    <script src="../frontend/js/admin-store.js"></script>
+    <script src="../frontend/js/admin-shell.js"></script>
+    <script>
+        $(document).ready(async function() {
+            const isNestedPage = window.location.pathname.toLowerCase().indexOf('/admin/products/') !== -1;
+            const loginPath = isNestedPage ? '../login.html' : 'login.html';
+
+            if (!AdminStore.isAuthenticated()) {
+                window.location.href = loginPath;
+                return;
+            }
+
+            await AdminStore.syncFromCloud();
+
+            function resolveAdminPath(relativePath) {
+                const normalized = String(relativePath || '').replace(/^\/+/, '');
+                const match = window.location.pathname.match(/^(.*\/admin)(?:\/|$)/i);
+                const adminRoot = match ? match[1] : '/admin';
+                return `${adminRoot}/${normalized}`;
+            }
+
+            function getProductId() {
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    return String(params.get('id') || '').trim();
+                } catch (err) {
+                    return '';
+                }
+            }
+
+            function getProductById(productId) {
+                return AdminStore.getProducts().find(p => String(p.id) === String(productId)) || null;
+            }
+
+            function getCategoryNameById(categoryId) {
+                const categories = AdminStore.getCategories();
+                const found = categories.find(c => String(c.id) === String(categoryId));
+                return found ? found.name : '-';
+            }
+
+            function formatProductPrice(value) {
+                const amount = Number(value || 0);
+                return `৳${amount.toFixed(2)}`;
+            }
+
+            function renderProductDetails() {
+                const productId = getProductId();
+                if (!productId) {
+                    $('#productContent').html('<div class="loading-state"><i class="fas fa-exclamation-circle"></i> Invalid product ID</div>');
+                    return;
+                }
+
+                const product = getProductById(productId);
+                if (!product) {
+                    $('#productContent').html('<div class="loading-state"><i class="fas fa-exclamation-circle"></i> Product not found</div>');
+                    return;
+                }
+
+                const categoryName = getCategoryNameById(product.categoryId);
+                const oldPriceHtml = Number(product.oldPrice || 0) > 0 
+                    ? `<span class="price-old">${formatProductPrice(product.oldPrice)}</span>` 
+                    : '';
+
+                const galleryHtml = Array.isArray(product.galleryImages) && product.galleryImages.length > 0
+                    ? product.galleryImages.map((img, idx) => `<img src="${img}" alt="Gallery ${idx + 1}" class="thumb-item" data-index="${idx}">`).join('')
+                    : '';
+
+                const descriptionHtml = product.description 
+                    ? `<div class="detail-description">${product.description}</div>`
+                    : '';
+
+                const imageHtml = product.image
+                    ? `<img src="${product.image}" alt="${product.name}" class="main-photo" id="mainDetailImage">`
+                    : '<div style="color: #9ca3af; text-align: center;"><i class="fas fa-image" style="font-size: 64px; opacity: 0.5;"></i></div>';
+
+                const html = `
+                    <div class="detail-card">
+                        <div>
+                            <div class="detail-image-stage">
+                                ${imageHtml}
+                                ${product.image ? `
+                                    <button type="button" class="detail-slider-btn" id="detailPrev">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <button type="button" class="detail-slider-btn" id="detailNext">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                            ${galleryHtml ? `
+                                <div class="thumb-list">
+                                    ${galleryHtml}
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div class="detail-content">
+                            <div>
+                                <div class="detail-name">${product.name || '-'}</div>
+                                ${product.sku ? `<div class="detail-sku">SKU: ${product.sku}</div>` : ''}
+                                <div>
+                                    <span class="detail-badge">${categoryName}</span>
+                                </div>
+                            </div>
+
+                            <div class="price-line">
+                                <span class="price-now">${formatProductPrice(product.price)}</span>
+                                ${oldPriceHtml}
+                            </div>
+
+                            <div class="detail-row">
+                                <div class="detail-item">
+                                    <div class="detail-item-label">Status</div>
+                                    <div class="detail-item-value">${product.isActive === false ? 'Inactive' : 'Active'}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-item-label">Sort Order</div>
+                                    <div class="detail-item-value">${product.sortOrder || 0}</div>
+                                </div>
+                            </div>
+
+                            ${product.productUrl ? `
+                                <div class="detail-item">
+                                    <div class="detail-item-label">Product URL</div>
+                                    <div class="detail-item-value" style="word-break: break-all; font-size: 12px;">${product.productUrl}</div>
+                                </div>
+                            ` : ''}
+
+                            ${descriptionHtml}
+
+                            <div class="admin-footer-actions">
+                                <button type="button" class="admin-footer-edit" id="editProductBtn2">
+                                    <i class="fas fa-edit"></i> Edit Product
+                                </button>
+                                <button type="button" class="admin-footer-delete" id="deleteProductBtn2">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                $('#productContent').html(html);
+
+                // Gallery nav
+                let currentImageIndex = 0;
+                const allImages = product.image ? [product.image, ...(Array.isArray(product.galleryImages) ? product.galleryImages : [])] : [];
+
+                if (allImages.length > 1) {
+                    $(document).on('click', '#detailPrev', function(e) {
+                        e.preventDefault();
+                        currentImageIndex = (currentImageIndex - 1 + allImages.length) % allImages.length;
+                        $('#mainDetailImage').attr('src', allImages[currentImageIndex]);
+                    });
+
+                    $(document).on('click', '#detailNext', function(e) {
+                        e.preventDefault();
+                        currentImageIndex = (currentImageIndex + 1) % allImages.length;
+                        $('#mainDetailImage').attr('src', allImages[currentImageIndex]);
+                    });
+
+                    $(document).on('click', '.thumb-item', function(e) {
+                        e.preventDefault();
+                        currentImageIndex = $(this).data('index');
+                        $('#mainDetailImage').attr('src', allImages[currentImageIndex]);
+                    });
+                }
+            }
+
+            renderProductDetails();
+
+            $(document).on('click', '#editProductBtn, #editProductBtn2', function() {
+                const productId = getProductId();
+                if (productId) {
+                    window.location.href = resolveAdminPath(`products/add.html?edit=${encodeURIComponent(productId)}`);
+                }
+            });
+
+            $(document).on('click', '#deleteProductBtn, #deleteProductBtn2', function() {
+                const productId = getProductId();
+                const product = getProductById(productId);
+                if (!product) return;
+
+                const ok = confirm(`Delete this product?\n\n${product.name}\n(৳${Number(product.price || 0).toFixed(2)})`);
+                if (!ok) return;
+
+                try {
+                    AdminStore.deleteProduct(productId);
+                    window.location.href = resolveAdminPath('products/manage.html');
+                } catch (err) {
+                    alert('Error deleting product: ' + err.message);
+                }
+            });
+
+            // Live listener
+            try {
+                const ref = AdminStore.getCloudDocRef();
+                if (ref) {
+                    ref.onSnapshot(() => renderProductDetails(), (err) => {
+                        console.warn('Live listener failed', err);
+                    });
+                }
+            } catch (err) {
+                console.warn('Unable to start live listener', err);
+            }
+        });
+    </script>
+</body>
+</html>
