@@ -537,7 +537,6 @@
             '              <input type="text" name="qty" value="1" hidden>',
             '              <button type="submit" class="btn btn-info btn-sm btn-block text-dark" style="color: white !important;box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);">অর্ডার করুন</button>',
             '          </form>',
-            '          <button type="button" class="btn btn-sm btn-block d2w-add-cart-btn" style="background-color:#27ae60;color:#fff;border:1px solid #27ae60;border-radius:0;font-weight:500;transition:all 0.3s ease;" onmouseover="this.style.backgroundColor=\'#229954\';this.style.borderColor=\'#229954\';" onmouseout="this.style.backgroundColor=\'#27ae60\';this.style.borderColor=\'#27ae60\';this.style.boxShadow=\'none\';">Add to Cart</button>',
             '      </div>',
             '  </div>',
             '</div>'
@@ -952,17 +951,6 @@
             } else {
                 showCartToast("Product added to cart");
             }
-        });
-
-        // Dedicated Add to Cart button for product cards.
-        $(document).on("click", ".d2w-add-cart-btn", function (e) {
-            e.preventDefault();
-            var $card = $(this).closest(".product-item");
-            var $form = $card.find('form[action*="add-to-cart"]').first();
-            if (!$form.length) return;
-            var item = extractProductFromForm($form);
-            addToCart(item);
-            showCartToast("Product added to cart");
         });
 
         // Intercept cart icon checkout link and open local cart modal.

@@ -1062,6 +1062,56 @@ function promptNextStatus(currentStatus) {
     return next;
 }
 
+function getStatusOptionsMarkup(currentStatus) {
+    const statuses = [
+        { value: 'new', label: 'New Order' },
+        { value: 'complete', label: 'Complete' },
+        { value: 'no_response', label: 'No Response' },
+        { value: 'hold', label: 'Hold' },
+        { value: 'cancelled', label: 'Cancelled' },
+        { value: 'in_courier', label: 'In Courier' },
+        { value: 'delivered', label: 'Delivered' }
+    ];
+
+    return statuses.map(function(status) {
+        const selected = status.value === currentStatus ? 'selected' : '';
+        return `<option value="${status.value}" ${selected}>${escapeHtml(status.label)}</option>`;
+    }).join('');
+}
+
+function getStatusModalHtml() {
+    return `
+        <div class="modal fade order-status-modal" id="orderStatusModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content order-status-modal-content">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title order-status-modal-title">Update Order Status</h5>
+                        <button type="button" class="close order-status-modal-close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body pt-2">
+                        <div class="order-status-modal-field">
+                            <label class="order-status-modal-label">Invoice</label>
+                            <div class="order-status-modal-readonly" id="orderStatusModalInvoice">Invoice: -</div>
+                        </div>
+                        <div class="order-status-modal-field">
+                            <label for="orderStatusModalSelect" class="order-status-modal-label">Select Status</label>
+                            <select class="form-control order-status-modal-select" id="orderStatusModalSelect">
+                                ${getStatusOptionsMarkup('new')}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0 justify-content-end">
+                        <button type="button" class="btn btn-light order-status-modal-cancel" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn order-status-modal-confirm" id="orderStatusModalConfirm">Confirm Update</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 function escapeHtml(text) {
     return String(text || '')
         .replace(/&/g, '&amp;')
@@ -1196,9 +1246,30 @@ function renderOrders() {
         const orderId = String($(this).data('order-id') || '');
         const currentStatus = String($(this).data('current-status') || 'new');
         if (!orderId) return;
-        const nextStatus = promptNextStatus(currentStatus);
-        if (!nextStatus || nextStatus === currentStatus) return;
+
+        const order = getOrderById(orderId) || (filteredOrders || []).find(function(item) {
+            return getOrderKey(item) === orderId;
+        }) || null;
+
+        const invoiceText = `Invoice: #${getInvoiceNumber(order || { orderId: orderId })}`;
+        $('#orderStatusModal').data('order-id', orderId);
+        $('#orderStatusModalInvoice').text(invoiceText);
+        $('#orderStatusModalSelect').val(currentStatus);
+
+        if ($.fn.modal) {
+            $('#orderStatusModal').modal('show');
+        }
+    });
+
+    $(document).off('click', '#orderStatusModalConfirm').on('click', '#orderStatusModalConfirm', function() {
+        const modal = $('#orderStatusModal');
+        const orderId = String(modal.data('order-id') || '').trim();
+        const nextStatus = String($('#orderStatusModalSelect').val() || '').trim();
+        if (!orderId || !nextStatus) return;
         updateOrderStatus(orderId, nextStatus);
+        if ($.fn.modal) {
+            modal.modal('hide');
+        }
     });
 
     container.off('click', '.orders-edit-btn').on('click', '.orders-edit-btn', function() {
@@ -1394,6 +1465,7 @@ function init() {
 
     currentView = getViewFromUrl();
     setupHeader();
+    ensureStatusModalMounted();
     setupDateRangeFilter();
     setupEvents();
 
@@ -1423,6 +1495,12 @@ function init() {
             }).catch(() => {});
         }
     });
+}
+
+function ensureStatusModalMounted() {
+    if (!document.getElementById('orderStatusModal')) {
+        document.body.insertAdjacentHTML('beforeend', getStatusModalHtml());
+    }
 }
 
 $(document).ready(init);
