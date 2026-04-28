@@ -46,9 +46,6 @@
             </aside>
 
             <main class="main-panel">
-                <h4 class="mb-1">Dashboard</h4>
-                <p class="muted mb-3">Track your current uploads and jump to separate management pages.</p>
-
                 <div class="orders-overview-head mb-3">
                     <h4 class="orders-overview-title mb-0">Orders Overview</h4>
                     <div class="d2w-date-filter-wrap mb-0" id="d2wDateRangeRoot">
@@ -80,54 +77,54 @@
                 </div>
 
                 <div class="orders-overview-grid mb-3">
-                    <div class="overview-card overview-blue">
+                    <a class="overview-card overview-blue" href="order/all.html">
                         <div class="overview-icon"><i class="fas fa-cube"></i></div>
                         <div>
                             <div class="overview-label">All Orders</div>
                             <div class="overview-value" id="ovAllAmount">৳0.00</div>
                             <div class="overview-count" id="ovAllCount">0 orders</div>
                         </div>
-                    </div>
-                    <div class="overview-card overview-green">
+                    </a>
+                    <a class="overview-card overview-green" href="order/new.html">
                         <div class="overview-icon"><i class="fas fa-heartbeat"></i></div>
                         <div>
                             <div class="overview-label">New Orders</div>
                             <div class="overview-value" id="ovNewAmount">৳0.00</div>
                             <div class="overview-count" id="ovNewCount">0 orders</div>
                         </div>
-                    </div>
-                    <div class="overview-card overview-sky">
+                    </a>
+                    <a class="overview-card overview-sky" href="order/complete.html">
                         <div class="overview-icon"><i class="far fa-check-circle"></i></div>
                         <div>
                             <div class="overview-label">Completed Orders</div>
                             <div class="overview-value" id="ovCompleteAmount">৳0.00</div>
                             <div class="overview-count" id="ovCompleteCount">0 orders</div>
                         </div>
-                    </div>
-                    <div class="overview-card overview-purple">
+                    </a>
+                    <a class="overview-card overview-purple" href="order/in-courier.html">
                         <div class="overview-icon"><i class="fas fa-shipping-fast"></i></div>
                         <div>
                             <div class="overview-label">In Courier</div>
                             <div class="overview-value" id="ovCourierAmount">৳0.00</div>
                             <div class="overview-count" id="ovCourierCount">0 orders</div>
                         </div>
-                    </div>
-                    <div class="overview-card overview-teal">
-                        <div class="overview-icon"><i class="fas fa-check"></i></div>
+                    </a>
+                    <a class="overview-card overview-teal" href="order/no-response.html">
+                        <div class="overview-icon"><i class="fas fa-phone-slash"></i></div>
                         <div>
-                            <div class="overview-label">FB Sent</div>
-                            <div class="overview-value" id="ovFbSentAmount">৳0.00</div>
-                            <div class="overview-count" id="ovFbSentCount">0 orders</div>
+                            <div class="overview-label">No Response</div>
+                            <div class="overview-value" id="ovNoResponseAmount">৳0.00</div>
+                            <div class="overview-count" id="ovNoResponseCount">0 orders</div>
                         </div>
-                    </div>
-                    <div class="overview-card overview-amber">
+                    </a>
+                    <a class="overview-card overview-amber" href="order/hold.html">
                         <div class="overview-icon"><i class="fas fa-pause-circle"></i></div>
                         <div>
                             <div class="overview-label">Hold Orders</div>
                             <div class="overview-value" id="ovHoldAmount">৳0.00</div>
                             <div class="overview-count" id="ovHoldCount">0 orders</div>
                         </div>
-                    </div>
+                    </a>
                 </div>
 
                 <div class="d2w-analytics-grid mb-3">
@@ -180,37 +177,23 @@
                     </section>
                 </div>
 
-                <div class="row mt-2">
-                    <div class="col-md-4 mb-3">
-                        <div class="stat-card">
-                            <h6>Category Management</h6>
-                            <p class="muted mb-3">Add, edit, sort and remove categories from a dedicated page.</p>
-                            <a href="products/categories.html" class="btn btn-primary btn-sm">Go To Categories</a>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="stat-card">
-                            <h6>Product Management</h6>
-                            <p class="muted mb-3">Upload products, set prices, assign category and control visibility.</p>
-                            <a href="products/manage.html" class="btn btn-primary btn-sm">Go To Products</a>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="stat-card">
-                            <h6><i class="fas fa-star"></i> Reviews</h6>
-                            <p class="muted mb-3">Approve customer reviews and publish admin-created product reviews.</p>
-                            <a href="reviews.html" class="btn btn-warning btn-sm"><i class="fas fa-comments"></i> Manage Reviews</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row mt-2">
-                    <div class="col-md-12 mb-3">
-                        <div class="stat-card">
-                            <h6><i class="fas fa-shopping-bag"></i> Order Management</h6>
-                            <p class="muted mb-3">View all customer orders, update order status, and track delivery. See customer information, ordered items, pricing details, and payment status.</p>
-                            <a href="orders.html" class="btn btn-success btn-sm"><i class="fas fa-eye"></i> Manage Orders</a>
-                        </div>
+                <div class="d2w-latest-orders mt-2">
+                    <h5 class="d2w-orders-title mb-3">Latest Orders</h5>
+                    <div class="admin-table-wrap">
+                        <table class="admin-record-table d2w-latest-orders-table">
+                            <thead>
+                                <tr>
+                                    <th>INVOICE</th>
+                                    <th>CUSTOMER</th>
+                                    <th>AMOUNT</th>
+                                    <th>STATUS</th>
+                                    <th>ORDERED AT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="latestOrdersTableBody">
+                                <!-- Orders will be loaded here by JavaScript -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </main>

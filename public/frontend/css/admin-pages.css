@@ -2047,11 +2047,17 @@
   align-items: center;
   transition: transform 0.16s ease, box-shadow 0.18s ease;
   background: #fff;
+  text-decoration: none !important;
 }
 
 .overview-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+}
+
+.overview-card:focus {
+  outline: none;
+  box-shadow: 0 0 0 0.18rem rgba(59, 130, 246, 0.18);
 }
 
 .overview-icon {
@@ -2374,7 +2380,7 @@
 }
 
 .d2w-date-filter-trigger {
-  width: 100%;
+  width: 104%;
   height: 46px;
   border: 1px solid #d9dee7;
   border-radius: 12px;
@@ -2406,7 +2412,8 @@
   top: calc(100% + 8px);
   left: 0;
   z-index: 35;
-  width: min(680px, calc(100vw - 32px));
+  width: min(800px, calc(100vw - 20px));
+  max-width: 800px;
   background: #fff;
   border: 1px solid #e6e8ef;
   border-radius: 12px;
@@ -2424,6 +2431,7 @@
 .orders-overview-head .d2w-date-range-popup {
   left: auto;
   right: 0;
+  max-width: calc(100vw - 20px);
   transform-origin: top right;
 }
 
@@ -2510,8 +2518,10 @@
 
 .d2w-date-range-calendar-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+  min-width: 0;
+  flex: 1;
 }
 
 .d2w-calendar {
@@ -2719,5 +2729,153 @@
 
   .create-summary-card {
     position: static;
+  }
+}
+
+/* Latest Orders Section */
+.d2w-latest-orders {
+  background: #fff;
+  border: 1px solid #edf1f5;
+  border-radius: 16px;
+  padding: 26px 28px 10px;
+  overflow: hidden;
+  margin-top: 20px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.04);
+}
+
+.d2w-orders-title {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #1f2937;
+  padding: 0;
+  margin: 0 0 26px 0;
+  border-bottom: none;
+}
+
+.d2w-latest-orders .admin-table-wrap {
+  border: none;
+  border-radius: 0;
+  overflow: auto;
+  background: transparent;
+  margin: 0;
+  padding: 0;
+}
+
+.d2w-latest-orders-table {
+  width: 100%;
+  min-width: 920px !important;
+  margin-bottom: 0 !important;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.d2w-latest-orders-table thead {
+  background: transparent;
+  border: none;
+}
+
+.d2w-latest-orders-table thead th {
+  background: #f7f8fa !important;
+  color: #6b7280 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  border-color: #f0f2f5 !important;
+  padding: 18px 14px !important;
+  white-space: nowrap !important;
+  border-bottom: 1px solid #edf1f5 !important;
+}
+
+.d2w-latest-orders-table tbody td {
+  font-size: 14px !important;
+  color: #4b5563 !important;
+  padding: 18px 14px !important;
+  background: #fff !important;
+  border-bottom: 1px solid #edf1f5 !important;
+  vertical-align: middle !important;
+  font-weight: 500;
+}
+
+.d2w-latest-orders-table tbody tr {
+  border: none;
+  transition: background-color 0.15s ease;
+}
+
+.d2w-latest-orders-table tbody tr:hover {
+  background-color: #fbfcfd !important;
+}
+
+.d2w-latest-orders-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.d2w-latest-orders-table tbody td a {
+  color: #3b82f6;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.d2w-latest-orders-table tbody td a:hover {
+  text-decoration: underline;
+}
+
+.d2w-latest-orders-table tbody td:nth-child(1),
+.d2w-latest-orders-table thead th:nth-child(1) {
+  min-width: 140px;
+}
+
+.d2w-latest-orders-table tbody td:nth-child(2),
+.d2w-latest-orders-table thead th:nth-child(2) {
+  min-width: 320px;
+}
+
+.d2w-latest-orders-table tbody td:nth-child(2) {
+  color: #374151 !important;
+  font-weight: 600;
+}
+
+.d2w-latest-orders-table tbody td:nth-child(3),
+.d2w-latest-orders-table thead th:nth-child(3) {
+  text-align: left;
+  min-width: 150px;
+}
+
+.d2w-latest-orders-table tbody td:nth-child(4),
+.d2w-latest-orders-table thead th:nth-child(4) {
+  min-width: 140px;
+}
+
+.d2w-latest-orders-table tbody td:nth-child(4) {
+  color: #4b5563 !important;
+}
+
+.d2w-latest-orders-table tbody td:nth-child(5),
+.d2w-latest-orders-table thead th:nth-child(5) {
+  min-width: 220px;
+}
+
+.d2w-latest-orders-table thead th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.d2w-latest-orders-table thead th:last-child {
+  border-top-right-radius: 12px;
+}
+
+@media (max-width: 768px) {
+  .d2w-latest-orders {
+    padding: 18px 18px 8px;
+  }
+
+  .d2w-orders-title {
+    font-size: 26px;
+    margin-bottom: 18px;
+  }
+
+  .d2w-latest-orders-table thead th,
+  .d2w-latest-orders-table tbody td {
+    padding: 14px 12px !important;
   }
 }

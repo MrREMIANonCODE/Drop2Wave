@@ -76,6 +76,25 @@ $(document).ready(async function() {
         return `৳${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
+    function getCustomerDisplayName(order) {
+        if (!order || typeof order !== 'object') return 'Unknown';
+
+        const candidates = [
+            order.customerName,
+            order.customer && order.customer.name,
+            order.shipping && order.shipping.name,
+            order.billing && order.billing.name,
+            order.name,
+            order.fullName
+        ];
+
+        const match = candidates.find(function(value) {
+            return typeof value === 'string' && value.trim();
+        });
+
+        return match ? match.trim() : 'Unknown';
+    }
+
     function isOrderInRange(order, range) {
         if (!range || !range.startDate || !range.endDate) return true;
         const orderDate = getOrderDate(order);
@@ -100,7 +119,7 @@ $(document).ready(async function() {
             new: { amount: 0, count: 0 },
             complete: { amount: 0, count: 0 },
             in_courier: { amount: 0, count: 0 },
-            delivered: { amount: 0, count: 0 },
+            no_response: { amount: 0, count: 0 },
             hold: { amount: 0, count: 0 }
         };
 
@@ -129,9 +148,9 @@ $(document).ready(async function() {
                 buckets.in_courier.count += 1;
                 buckets.in_courier.amount += total;
             }
-            if (status === 'delivered') {
-                buckets.delivered.count += 1;
-                buckets.delivered.amount += total;
+            if (status === 'no_response') {
+                buckets.no_response.count += 1;
+                buckets.no_response.amount += total;
             }
             if (status === 'hold') {
                 buckets.hold.count += 1;
@@ -171,8 +190,8 @@ $(document).ready(async function() {
         writeAmount('ovCourierAmount', buckets.in_courier.amount);
         writeCount('ovCourierCount', buckets.in_courier.count);
 
-        writeAmount('ovFbSentAmount', buckets.delivered.amount);
-        writeCount('ovFbSentCount', buckets.delivered.count);
+        writeAmount('ovNoResponseAmount', buckets.no_response.amount);
+        writeCount('ovNoResponseCount', buckets.no_response.count);
 
         writeAmount('ovHoldAmount', buckets.hold.amount);
         writeCount('ovHoldCount', buckets.hold.count);
@@ -662,5 +681,76 @@ $(document).ready(async function() {
         applyRange(defaultStart, today, 30);
         renderSelectionLabel();
     }
+
+    // Load and render latest orders
+    function renderLatestOrders() {
+        const tbody = document.getElementById('latestOrdersTableBody');
+        if (!tbody) return;
+
+        let orders = [];
+        try {
+            const stored = localStorage.getItem('drop2wave_orders_v1');
+            if (stored) {
+                const data = JSON.parse(stored);
+                if (Array.isArray(data.orders)) {
+                    orders = data.orders.slice().reverse(); // Most recent first
+                }
+            }
+        } catch (e) {
+            console.error('Error loading orders:', e);
+        }
+
+        // Show only latest 8 orders on dashboard
+        const latestOrders = orders.slice(0, 8);
+        
+        if (latestOrders.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #999;">No orders yet</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = latestOrders.map(order => {
+            const invoiceId = order.id || '#' + (order.orderId || 'N/A');
+            const customerName = getCustomerDisplayName(order);
+            const total = order.pricing && order.pricing.total ? order.pricing.total : (order.total || 0);
+            const status = order.orderStatus || order.status || 'pending';
+            const timestamp = order.orderTimestamp || order.orderDate || new Date().getTime();
+            
+            // Format date
+            let dateStr = '';
+            try {
+                const date = new Date(Number(timestamp) || timestamp);
+                dateStr = date.toLocaleString('en-GB', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+            } catch (e) {
+                dateStr = 'N/A';
+            }
+
+            // Capitalize status
+            const statusDisplay = status.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+            return `<tr>
+                <td><a href="order/all.html?id=${encodeURIComponent(order.id)}" style="color: #0ea5e9; text-decoration: none;">${invoiceId}</a></td>
+                <td>${customerName}</td>
+                <td>৳${Number(total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td>${statusDisplay}</td>
+                <td>${dateStr}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // Initial load and setup listener
+    renderLatestOrders();
+    window.addEventListener('storage', function(event) {
+        if (event.key === 'drop2wave_orders_v1') {
+            renderLatestOrders();
+        }
+    });
 });
 
