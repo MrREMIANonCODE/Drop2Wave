@@ -57,35 +57,89 @@
             </aside>
 
             <main class="main-panel">
-                <h4 class="mb-1" id="ordersPageTitle">All Orders</h4>
-                <p class="text-muted mb-3" id="ordersPageSubtitle">Master control page for all incoming orders.</p>
-
-                <div class="d2w-date-filter-wrap mb-3" id="d2wDateRangeRoot">
-                    <label class="d2w-date-filter-label" for="d2wDateRangeTrigger">Filter Date Range</label>
-                    <button type="button" class="d2w-date-filter-trigger" id="d2wDateRangeTrigger" aria-haspopup="true" aria-expanded="false">
-                        <span id="d2wDateRangeValue">Select Date Range</span>
-                        <i class="far fa-calendar-alt"></i>
-                    </button>
-                    <div class="d2w-date-range-popup" id="d2wDateRangePopup" aria-hidden="true">
-                        <div class="d2w-date-range-presets">
-                            <button type="button" class="d2w-date-preset" data-days="7">Last 7 Days</button>
-                            <button type="button" class="d2w-date-preset" data-days="30">Last 30 Days</button>
-                            <button type="button" class="d2w-date-preset" data-days="90">Last 90 Days</button>
+                <section class="orders-top-hero">
+                    <div class="orders-top-hero-left">
+                        <div class="orders-top-hero-icon">
+                            <i class="fas fa-cart-plus"></i>
                         </div>
-                        <div class="d2w-date-range-calendars">
-                            <div class="d2w-date-range-selection" id="d2wDateRangeSelection">Pick start and end date</div>
-                            <div class="d2w-date-range-calendar-head">
-                                <button type="button" class="d2w-cal-nav" id="d2wPrevMonth" aria-label="Previous month">
-                                    <i class="fas fa-chevron-left"></i>
-                                </button>
-                                <button type="button" class="d2w-cal-nav" id="d2wNextMonth" aria-label="Next month">
-                                    <i class="fas fa-chevron-right"></i>
-                                </button>
-                            </div>
-                            <div class="d2w-date-range-calendar-grid" id="d2wCalendarGrid"></div>
+                        <div>
+                            <div class="orders-top-hero-kicker">ORDERS</div>
+                            <h2 class="orders-top-hero-title mb-0"><span id="ordersPageTitle">All Orders</span> <span id="ordersPageCount">(0)</span></h2>
                         </div>
                     </div>
-                </div>
+                    <a href="orders.html?view=create" class="btn btn-sm d2w-page-primary-btn d2w-page-primary-btn--cool orders-top-create-btn" id="ordersCreateBtn">
+                        <i class="fas fa-plus mr-1"></i> Create Order
+                    </a>
+                </section>
+
+                <!-- hidden compatibility filter for all-view status filter -->
+                <select id="filterStatus" class="d-none" aria-hidden="true">
+                    <option value="">All Status</option>
+                    <option value="new">New</option>
+                    <option value="complete">Complete</option>
+                    <option value="no_response">No Response</option>
+                    <option value="hold">Hold</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="in_courier">In Courier</option>
+                    <option value="delivered">Delivered</option>
+                </select>
+
+                <!-- Filter Section -->
+                <section class="filter-section orders-filter-card" id="filterSection">
+                    <div class="orders-filter-top">
+                        <div>
+                            <div class="orders-filter-kicker">FILTERS</div>
+                            <p class="orders-filter-subtext mb-0" id="ordersPageSubtitle">Filter by customer name or date range</p>
+                        </div>
+                        <div class="orders-filter-actions">
+                            <button type="button" class="btn btn-sm btn-primary" id="applyOrderFiltersBtn">
+                                <i class="fas fa-filter mr-1"></i> Apply
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="resetOrderFiltersBtn">
+                                <i class="fas fa-undo-alt mr-1"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-2 mb-md-0">
+                            <div class="form-group mb-0">
+                                <label for="searchOrders">Filter by Name</label>
+                                <input type="text" class="form-control form-control-sm" id="searchOrders" placeholder="Enter customer name">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-0">
+                                <label for="d2wDateRangeTrigger">Date Range</label>
+                                <div class="d2w-date-filter-wrap mb-0" id="d2wDateRangeRoot">
+                                    <button type="button" class="d2w-date-filter-trigger" id="d2wDateRangeTrigger" aria-haspopup="true" aria-expanded="false">
+                                        <span id="d2wDateRangeValue">Start date -> End date</span>
+                                        <i class="far fa-calendar-alt"></i>
+                                    </button>
+                                    <div class="d2w-date-range-popup" id="d2wDateRangePopup" aria-hidden="true">
+                                        <div class="d2w-date-range-presets">
+                                            <button type="button" class="d2w-date-preset" data-days="7">Last 7 Days</button>
+                                            <button type="button" class="d2w-date-preset" data-days="30">Last 30 Days</button>
+                                            <button type="button" class="d2w-date-preset" data-days="90">Last 90 Days</button>
+                                        </div>
+                                        <div class="d2w-date-range-calendars">
+                                            <div class="d2w-date-range-selection" id="d2wDateRangeSelection">Pick start and end date</div>
+                                            <div class="d2w-date-range-calendar-head">
+                                                <button type="button" class="d2w-cal-nav" id="d2wPrevMonth" aria-label="Previous month">
+                                                    <i class="fas fa-chevron-left"></i>
+                                                </button>
+                                                <button type="button" class="d2w-cal-nav" id="d2wNextMonth" aria-label="Next month">
+                                                    <i class="fas fa-chevron-right"></i>
+                                                </button>
+                                            </div>
+                                            <div class="d2w-date-range-calendar-grid" id="d2wCalendarGrid"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
                 <!-- Stats Row -->
                 <div class="stats-row" id="statsRow">
@@ -104,33 +158,6 @@
                     <div class="stat-card">
                         <div class="stat-value" id="deliveredOrders">0</div>
                         <div class="stat-label">In Courier</div>
-                    </div>
-                </div>
-
-                <!-- Filter Section -->
-                <div class="filter-section" id="filterSection">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="filterStatus">Status Filter:</label>
-                                <select id="filterStatus" class="form-control form-control-sm">
-                                    <option value="">All Status</option>
-                                    <option value="new">New</option>
-                                    <option value="complete">Complete</option>
-                                    <option value="no_response">No Response</option>
-                                    <option value="hold">Hold</option>
-                                    <option value="cancelled">Cancelled</option>
-                                    <option value="in_courier">In Courier</option>
-                                    <option value="delivered">Delivered</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="searchOrders">Search:</label>
-                                <input type="text" class="form-control form-control-sm" id="searchOrders" placeholder="Search by name, phone, or invoice number...">
-                            </div>
-                        </div>
                     </div>
                 </div>
 

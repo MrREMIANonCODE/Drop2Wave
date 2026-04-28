@@ -12,6 +12,7 @@ let currentView = 'all';
 let renderLimit = 30;
 const renderStep = 30;
 let activeDateRange = null;
+let dateRangeControl = null;
 let createOrderDraft = {
     customerName: '',
     customerPhone: '',
@@ -269,7 +270,7 @@ function getOrderViewTitle() {
     const titles = {
         create: 'Create Order',
         all: 'All Orders',
-        new: 'New Orders',
+        new: 'New Order',
         complete: 'Complete Orders',
         no_response: 'No Response Orders',
         cancelled: 'Cancel Orders',
@@ -298,13 +299,15 @@ function setupHeader() {
     const subtitle = document.getElementById('ordersPageSubtitle');
     const filterSection = document.getElementById('filterSection');
     const statsRow = document.getElementById('statsRow');
+    const createBtn = document.getElementById('ordersCreateBtn');
 
     if (title) title.textContent = getOrderViewTitle();
     if (subtitle) subtitle.textContent = getOrderViewSubtitle();
 
     const hideMeta = currentView === 'create';
     if (filterSection) filterSection.style.display = hideMeta ? 'none' : '';
-    if (statsRow) statsRow.style.display = hideMeta ? 'none' : '';
+    if (statsRow) statsRow.style.display = currentView === 'all' ? '' : 'none';
+    if (createBtn) createBtn.style.display = hideMeta ? 'none' : '';
 }
 
 function setupEvents() {
@@ -314,6 +317,21 @@ function setupEvents() {
     $('#searchOrders').on('input', function() {
         clearTimeout(t);
         t = setTimeout(applyFilters, 160);
+    });
+
+    $('#applyOrderFiltersBtn').on('click', function() {
+        applyFilters();
+        updateStats();
+    });
+
+    $('#resetOrderFiltersBtn').on('click', function() {
+        $('#searchOrders').val('');
+        $('#filterStatus').val('');
+        if (dateRangeControl && typeof dateRangeControl.clearRange === 'function') {
+            dateRangeControl.clearRange();
+        }
+        applyFilters();
+        updateStats();
     });
 
     $(document).on('click', '#logoutBtn', function() {
@@ -361,12 +379,14 @@ function applyFilters() {
 
     renderLimit = renderStep;
     renderOrders();
+    const countEl = document.getElementById('ordersPageCount');
+    if (countEl) countEl.textContent = `(${filteredOrders.length})`;
 }
 
 function setupDateRangeFilter() {
     if (typeof window.createD2WDateRangeFilter !== 'function') return;
 
-    window.createD2WDateRangeFilter({
+    dateRangeControl = window.createD2WDateRangeFilter({
         defaultPresetDays: 30,
         onRangeChange: function(startDate, endDate) {
             if (startDate instanceof Date && endDate instanceof Date) {
