@@ -55,8 +55,8 @@
                 <p class="text-muted mb-3">Create and manage product categories from one place.</p>
                 <div id="statusMessage" class="alert d-none" role="alert"></div>
 
-                <div class="card-lite">
-                    <h6 class="mb-3">Add New Category</h6>
+                <div class="card-lite" style="border:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                    <h6 class="mb-3" style="font-size:15px;font-weight:700;color:#111827;">Add New Category</h6>
                     <form id="categoryForm" novalidate>
                         <div class="form-row">
                             <div class="form-group col-md-6">
@@ -108,16 +108,17 @@
                 </div>
 
                 <div class="card-lite mb-0">
-                    <h6 class="mb-3">Current Categories</h6>
-                    <div class="table-responsive">
-                        <table class="table table-hover table-bordered mb-0">
+                    <h6 class="mb-3" style="font-size:15px;font-weight:700;color:#111827;">Current Categories</h6>
+                    <div class="table-responsive admin-table-wrap">
+                        <table class="table admin-record-table table-hover mb-0">
                             <thead class="thead-light">
                                 <tr>
                                     <th>#</th>
                                     <th>Image</th>
                                     <th>Name</th>
                                     <th>Slug</th>
-                                    <th>Order</th>
+                                    <th>Products</th>
+                                    <th>Orders</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>

@@ -21,12 +21,15 @@ $(document).ready(async function() {
     const $categorySortOrder = $('#categorySortOrder');
     const $categoryIsActive = $('#categoryIsActive');
     
+    let editingCategoryId = null;
+    
     await AdminStore.syncFromCloud();
 
     loadCategories();
     setupFormHandler();
     setupLogout();
     startLiveStoreListener();
+    startOrdersListener();
 
     async function startLiveStoreListener() {
         try {
@@ -48,6 +51,20 @@ $(document).ready(async function() {
         } catch (err) {
             console.warn('Unable to start live categories listener.', err);
         }
+    }
+
+    // Listen for order changes to update category order counts
+    function startOrdersListener() {
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'drop2wave_orders_v1') {
+                loadCategories();
+            }
+        });
+        
+        // Also check for orders changes every 5 seconds
+        setInterval(() => {
+            loadCategories();
+        }, 5000);
     }
 
     function isQuotaExceededError(err) {
@@ -92,29 +109,76 @@ $(document).ready(async function() {
     
     function loadCategories() {
         const categories = AdminStore.getCategories().slice().sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+        const products = AdminStore.getProducts();
         const $table = $('#categoryTableBody');
+        
+        // Get orders from localStorage - handle both formats
+        let allOrders = [];
+        try {
+            const ordersRaw = localStorage.getItem('drop2wave_orders_v1');
+            if (ordersRaw) {
+                const parsed = JSON.parse(ordersRaw);
+                // Handle both { orders: [...] } and [...] formats
+                if (Array.isArray(parsed)) {
+                    allOrders = parsed;
+                } else if (parsed && Array.isArray(parsed.orders)) {
+                    allOrders = parsed.orders;
+                }
+            }
+        } catch (e) {
+            console.warn('Error reading orders:', e);
+            allOrders = [];
+        }
         
         if (!$table.length) return;
         
         if (categories.length === 0) {
-            $table.html('<tr><td colspan="7" class="text-center text-muted">No categories yet</td></tr>');
+            $table.html('<tr><td colspan="8" class="text-center text-muted">No categories yet</td></tr>');
             return;
         }
         
-        $table.html(categories.map((cat, idx) => `
+        $table.html(categories.map((cat, idx) => {
+            const productsInCat = products.filter(p => String(p.categoryId) === String(cat.id)).length;
+            
+            // Count orders for this category by checking order items
+            let ordersInCat = 0;
+            allOrders.forEach(order => {
+                if (order && Array.isArray(order.items)) {
+                    order.items.forEach(item => {
+                        if (String(item.categoryId) === String(cat.id)) {
+                            ordersInCat += Number(item.quantity || 1);
+                        }
+                    });
+                }
+            });
+            
+            const statusStyle = cat.isActive === false 
+                ? 'background:#f3f4f6;color:#6b7280;' 
+                : 'background:#d1fae5;color:#047857;';
+            const statusText = cat.isActive === false ? 'Inactive' : 'Active';
+            
+            return `
             <tr>
                 <td>${idx + 1}</td>
-                <td>${cat.image ? `<img src="${cat.image}" alt="${cat.name}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;">` : '-'}</td>
-                <td>${cat.name}</td>
-                <td>${cat.slug || '-'}</td>
-                <td>${cat.sortOrder || 0}</td>
-                <td><span class="badge badge-${cat.isActive === false ? 'secondary' : 'success'}">${cat.isActive === false ? 'Inactive' : 'Active'}</span></td>
+                <td>${cat.image ? `<img src="${cat.image}" alt="${cat.name}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;border:1px solid #e5e7eb;background:#f8fafc;">` : '<span style="color:#d1d5db;font-size:12px;">No image</span>'}</td>
+                <td><strong style="color:#111827;">${cat.name}</strong></td>
+                <td><code style="background:#f3f4f6;padding:3px 6px;border-radius:4px;color:#64748b;font-size:11px;">${cat.slug || '-'}</code></td>
+                <td><span style="background:#dbeafe;color:#1e40af;padding:4px 8px;border-radius:6px;font-weight:600;font-size:12px;">${productsInCat}</span></td>
+                <td><span style="background:#fef3c7;color:#92400e;padding:4px 8px;border-radius:6px;font-weight:600;font-size:12px;">${ordersInCat}</span></td>
+                <td><span style="${statusStyle}padding:6px 12px;border-radius:20px;font-size:13px;font-weight:600;display:inline-block;">${statusText}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-warning edit-btn" data-id="${cat.id}">Edit</button>
-                    <button class="btn btn-sm btn-danger delete-btn" data-id="${cat.id}">Delete</button>
+                    <div class="admin-action-group">
+                        <button class="admin-category-btn admin-category-btn-edit edit-btn" data-id="${cat.id}" title="Edit category">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="admin-category-btn admin-category-btn-delete delete-btn" data-id="${cat.id}" title="Delete category">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </button>
+                    </div>
                 </td>
             </tr>
-        `).join(''));
+        `;
+        }).join(''));
     }
     
     function setupFormHandler() {
@@ -131,22 +195,37 @@ $(document).ready(async function() {
                 return;
             }
             
-            const category = {
-                id: 'cat_' + Date.now(),
-                name: name,
-                slug: slug,
-                image: $categoryImage.val().trim(),
-                description: $categoryDescription.val().trim(),
-                sortOrder: parseInt($categorySortOrder.val(), 10) || 0,
-                isActive: $categoryIsActive.is(':checked')
-            };
-            
             try {
-                AdminStore.addCategory(category);
-                showStatus('Category added successfully!', 'success');
+                if (editingCategoryId) {
+                    // Update existing category
+                    AdminStore.updateCategory(editingCategoryId, {
+                        name: name,
+                        slug: slug,
+                        image: $categoryImage.val().trim(),
+                        description: $categoryDescription.val().trim(),
+                        sortOrder: parseInt($categorySortOrder.val(), 10) || 0,
+                        isActive: $categoryIsActive.is(':checked')
+                    });
+                    showStatus('Category updated successfully!', 'success');
+                    editingCategoryId = null;
+                } else {
+                    // Add new category
+                    const category = {
+                        id: 'cat_' + Date.now(),
+                        name: name,
+                        slug: slug,
+                        image: $categoryImage.val().trim(),
+                        description: $categoryDescription.val().trim(),
+                        sortOrder: parseInt($categorySortOrder.val(), 10) || 0,
+                        isActive: $categoryIsActive.is(':checked')
+                    };
+                    AdminStore.addCategory(category);
+                    showStatus('Category added successfully!', 'success');
+                }
                 $form[0].reset();
                 $categoryIsActive.prop('checked', true);
                 $('#categoryImagePreview').hide();
+                $('#cancelCategoryBtn').addClass('d-none');
                 loadCategories();
             } catch (err) {
                 if (isQuotaExceededError(err)) {
@@ -165,6 +244,49 @@ $(document).ready(async function() {
             showStatus('Category deleted', 'info');
             loadCategories();
         }
+    });
+
+    $(document).on('click', '.edit-btn', function() {
+        const id = $(this).data('id');
+        const categories = AdminStore.getCategories();
+        const category = categories.find(c => String(c.id) === String(id));
+        
+        if (!category) {
+            showStatus('Category not found', 'danger');
+            return;
+        }
+        
+        editingCategoryId = id;
+        $categoryName.val(category.name || '');
+        $categorySlug.val(category.slug || '');
+        $categoryDescription.val(category.description || '');
+        $categorySortOrder.val(category.sortOrder || 0);
+        $categoryIsActive.prop('checked', category.isActive !== false);
+        $categoryImage.val(category.image || '');
+        
+        if (category.image) {
+            $('#categoryImagePreviewImg').attr('src', category.image);
+            $('#categoryImagePreview').show();
+        } else {
+            $('#categoryImagePreview').hide();
+        }
+        
+        // Show cancel button and scroll to form
+        $('#cancelCategoryBtn').removeClass('d-none');
+        if ($form[0]) {
+            $form[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        $categoryName.focus();
+        showStatus('Editing category - update and save', 'info');
+    });
+
+    $(document).on('click', '#cancelCategoryBtn', function() {
+        editingCategoryId = null;
+        $form[0].reset();
+        $categoryIsActive.prop('checked', true);
+        $('#categoryImagePreview').hide();
+        $('#cancelCategoryBtn').addClass('d-none');
+        showStatus('Edit cancelled', 'info');
     });
     
     // Image Upload Handler for Categories
