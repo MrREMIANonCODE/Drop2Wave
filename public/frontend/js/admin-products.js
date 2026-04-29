@@ -14,6 +14,7 @@ $(document).ready(async function() {
     
     const $newProdForm = $('#newProductForm');
     const $totalProdForm = $('#totalProductForm');
+    const $productForm = $('#productForm');
     const $productFormPanel = $('#productFormPanel');
     const $openProductFormBtn = $('#openProductFormBtn');
     const $closeProductFormBtn = $('#closeProductFormBtn');
@@ -33,8 +34,12 @@ $(document).ready(async function() {
     setupProductPanelToggle();
     setupProductSearch();
     initEditModeFromUrl();
-    setupNewProductHandler();
-    setupTotalProductHandler();
+    if ($productForm.length) {
+        setupUnifiedProductHandler();
+    } else {
+        setupNewProductHandler();
+        setupTotalProductHandler();
+    }
     setupLogout();
     startLiveStoreListener();
 
@@ -114,6 +119,17 @@ $(document).ready(async function() {
                 if (!snap || !snap.exists) return;
                 const payload = snap.data() || {};
                 const cloudStore = AdminStore.normalizeStoreShape(payload.store || {});
+                const localStore = AdminStore.getStore();
+
+                // Prevent stale/empty cloud snapshots from wiping current products.
+                if (!AdminStore.shouldPreferCloudStore(localStore, cloudStore)) {
+                    // If local is newer, push it back so cloud catches up.
+                    if (AdminStore.hasMeaningfulStoreData(localStore)) {
+                        AdminStore.syncToCloud().catch(() => {});
+                    }
+                    return;
+                }
+
                 localStorage.setItem(AdminStore.STORE_KEY, JSON.stringify(cloudStore));
                 loadCategoryOptions();
                 loadNewProducts();
@@ -356,6 +372,38 @@ $(document).ready(async function() {
     }
 
     function setEditMode(product) {
+        if ($productForm.length) {
+            editState.productId = String(product.id);
+            editState.isNew = product.isNew === true;
+
+            $('#productType').val(editState.isNew ? 'new' : 'total');
+            $('#productName').val(product.name || '');
+            $('#productCategoryId').val(String(product.categoryId || ''));
+            $('#productPrice').val(Number(product.price || 0) || '');
+            $('#productOldPrice').val(Number(product.oldPrice || 0) || '');
+            $('#productWholesalePrice').val(Number(product.wholesalePrice || 0) || '');
+            $('#productStock').val(Number(product.stock || 0) || 0);
+            $('#productSortOrder').val(Number(product.sortOrder || 0) || 0);
+            $('#productUrl').val(product.productUrl || '');
+            $('#productIsActive').prop('checked', product.isActive !== false);
+            $('#productDescription').val(product.description || '');
+            setEditorHtmlByTarget('#productDescription', product.description || '');
+
+            if (product.image) {
+                $('#productImage').val(product.image);
+                $('#productImagePreviewImg').attr('src', product.image);
+                $('#productImagePreview').show();
+            }
+
+            setGalleryList('#productGalleryImages', Array.isArray(product.galleryImages) ? product.galleryImages : []);
+            renderGalleryPreview('#productGalleryPreview', '#productGalleryImages');
+
+            $('#productFormTitle').html(`<i class="fas fa-pen text-primary mr-1"></i> Edit ${editState.isNew ? 'New' : 'All'} Product`);
+            $('#productSaveLabel').text(`Update ${editState.isNew ? 'New' : 'All'} Product`);
+            $('#productCancelBtn').removeClass('d-none');
+            return;
+        }
+
         const target = getProductEditTarget(product);
         editState.productId = String(product.id);
         editState.isNew = target === 'new';
@@ -408,6 +456,22 @@ $(document).ready(async function() {
     function clearEditMode() {
         editState.productId = null;
         editState.isNew = null;
+        if ($productForm.length) {
+            $productForm[0].reset();
+            $('#productType').val('new');
+            $('#productIsActive').prop('checked', true);
+            $('#productStock').val('');
+            $('#productWholesalePrice').val('');
+            $('#productSaveLabel').text('Save Product');
+            $('#productCancelBtn').addClass('d-none');
+            $('#productFormTitle').html('<i class="fas fa-layer-group text-primary mr-1"></i> Product Upload');
+            setEditorHtmlByTarget('#productDescription', '');
+            $('#productImage').val('');
+            $('#productImagePreview').hide();
+            setGalleryList('#productGalleryImages', []);
+            renderGalleryPreview('#productGalleryPreview', '#productGalleryImages');
+            return;
+        }
         $('#newProductForm, #totalProductForm')[0].reset();
         $('#newProductIsActive, #totalProductIsActive').prop('checked', true);
         $('#newProductSaveLabel').text('Save New Product');
@@ -482,6 +546,7 @@ $(document).ready(async function() {
         
         $('#newProductCategoryId').html(option);
         $('#totalProductCategoryId').html(option);
+        $('#productCategoryId').html(option);
     }
 
 
@@ -493,6 +558,7 @@ $(document).ready(async function() {
         
         $('#newProductCategoryId').html(option);
         $('#totalProductCategoryId').html(option);
+        $('#productCategoryId').html(option);
     }
     
     function loadNewProducts() {
@@ -563,6 +629,91 @@ $(document).ready(async function() {
                 <td>${renderProductActions(prod)}</td>
             </tr>
         `).join(''));
+    }
+
+    function saveUnifiedProduct() {
+        const name = $('#productName').val().trim();
+        const categoryId = $('#productCategoryId').val();
+        const price = parseFloat($('#productPrice').val());
+        const normalizedUrl = normalizeOptionalUrl($('#productUrl').val());
+        const isNewTarget = String($('#productType').val() || 'new') === 'new';
+
+        if (!name || !categoryId) {
+            showStatus('Product name and category are required', 'danger');
+            return;
+        }
+        if (!Number.isFinite(price) || price <= 0) {
+            showStatus('Please enter a valid price greater than 0', 'danger');
+            return;
+        }
+        if (normalizedUrl === null) {
+            showStatus('Product URL is invalid. Use a valid URL or leave it blank.', 'danger');
+            return;
+        }
+
+        const product = {
+            id: editState.productId ? editState.productId : 'prod_' + Date.now(),
+            name,
+            categoryId,
+            price,
+            oldPrice: parseFloat($('#productOldPrice').val()) || 0,
+            wholesalePrice: parseFloat($('#productWholesalePrice').val()) || 0,
+            stock: parseInt($('#productStock').val(), 10) || 0,
+            sortOrder: parseInt($('#productSortOrder').val(), 10) || 0,
+            productUrl: normalizedUrl || '',
+            description: $('#productDescription').val().trim(),
+            image: $('#productImage').val().trim(),
+            coverImage: $('#productImage').val().trim(),
+            galleryImages: getGalleryList('#productGalleryImages'),
+            isNew: isNewTarget,
+            isActive: $('#productIsActive').is(':checked')
+        };
+
+        try {
+            localStorage.setItem('drop2wave_bootstrap_disabled', 'true');
+            if (editState.productId) {
+                AdminStore.updateProduct(editState.productId, product);
+                showStatus('Product updated successfully!', 'success');
+            } else {
+                AdminStore.addProduct(product);
+                showStatus('Product added successfully!', 'success');
+            }
+            clearEditMode();
+            loadNewProducts();
+            loadTotalProducts();
+        } catch (err) {
+            if (isQuotaExceededError(err)) {
+                try {
+                    const fallbackProduct = { ...product, image: '', coverImage: '', galleryImages: [] };
+                    if (editState.productId) {
+                        AdminStore.updateProduct(editState.productId, fallbackProduct);
+                    } else {
+                        AdminStore.addProduct(fallbackProduct);
+                    }
+                    showStatus('Storage full: product saved without images. Re-upload after cleanup.', 'warning');
+                    clearEditMode();
+                    loadNewProducts();
+                    loadTotalProducts();
+                } catch (fallbackErr) {
+                    showStatus('Storage is full. Please delete some image-heavy data and try again.', 'danger');
+                }
+                return;
+            }
+            showStatus('Could not save product due to an unexpected error.', 'danger');
+        }
+    }
+
+    function setupUnifiedProductHandler() {
+        if (!$productForm.length) return;
+        $productForm.on('submit', function(e) {
+            e.preventDefault();
+            saveUnifiedProduct();
+        });
+
+        $(document).on('click', '#productSaveBtn', function(e) {
+            e.preventDefault();
+            saveUnifiedProduct();
+        });
     }
     
     function saveNewProduct() {
@@ -772,6 +923,12 @@ $(document).ready(async function() {
         loadTotalProducts();
     });
 
+    $(document).on('click', '#productCancelBtn', function() {
+        clearEditMode();
+        loadNewProducts();
+        loadTotalProducts();
+    });
+
     $(document).on('click', '.edit-product', function(e) {
         e.preventDefault();
         const id = String($(this).data('id') || '');
@@ -785,6 +942,41 @@ $(document).ready(async function() {
     });
 
     function pickProductFromForm(isNewTarget) {
+        if ($productForm.length) {
+            const typedName = String($('#productName').val() || '').trim();
+            const categoryId = String($('#productCategoryId').val() || '').trim();
+            const typedPrice = parseFloat($('#productPrice').val());
+            const targetIsNew = String($('#productType').val() || 'new') === 'new';
+
+            if (!typedName || !categoryId) {
+                showStatus('Enter product name and category first to delete a specific product.', 'warning');
+                return null;
+            }
+
+            let matches = AdminStore.getProducts().filter(p => {
+                return (p.isNew === true) === targetIsNew &&
+                    String(p.name || '').trim().toLowerCase() === typedName.toLowerCase() &&
+                    String(p.categoryId || '') === categoryId;
+            });
+
+            if (Number.isFinite(typedPrice) && typedPrice > 0) {
+                const byPrice = matches.filter(p => Number(p.price || 0) === typedPrice);
+                if (byPrice.length) matches = byPrice;
+            }
+
+            if (!matches.length) {
+                showStatus('No matching product found from current form values.', 'warning');
+                return null;
+            }
+
+            matches.sort((a, b) => {
+                const aId = Number(String(a.id || '').replace(/\D/g, '')) || 0;
+                const bId = Number(String(b.id || '').replace(/\D/g, '')) || 0;
+                return bId - aId;
+            });
+            return matches[0];
+        }
+
         const prefix = isNewTarget ? '#newProduct' : '#totalProduct';
         const typedName = String($(prefix + 'Name').val() || '').trim();
         const categoryId = String($(prefix + 'CategoryId').val() || '').trim();
@@ -874,6 +1066,20 @@ $(document).ready(async function() {
         showStatus('Specific total product deleted.', 'info');
         loadTotalProducts();
     });
+
+    $(document).on('click', '#deleteProductBtn', function() {
+        const selected = pickProductFromForm(true);
+        if (!selected) return;
+
+        const ok = confirm(`Delete this product?\n\n${selected.name} (৳${Number(selected.price || 0).toFixed(2)})`);
+        if (!ok) return;
+
+        AdminStore.deleteProduct(selected.id);
+        showStatus('Product deleted.', 'info');
+        clearEditMode();
+        loadNewProducts();
+        loadTotalProducts();
+    });
     
     // Image Upload Handler for New Products
     $(document).on('click', '#uploadNewImageBtn', async function() {
@@ -923,12 +1129,36 @@ $(document).ready(async function() {
         }
     });
 
+    $(document).on('click', '#uploadProductImageBtn', async function() {
+        const fileInput = document.getElementById('productImageFile');
+        const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+
+        if (!file) {
+            showStatus('Please select an image file first', 'warning');
+            return;
+        }
+
+        try {
+            const imageDataUrl = await compressImageFile(file);
+            $('#productImage').val(imageDataUrl);
+            $('#productImagePreviewImg').attr('src', imageDataUrl);
+            $('#productImagePreview').show();
+            showStatus('Image optimized and uploaded! Click Save Product.', 'success');
+        } catch (err) {
+            showStatus('Error reading image file', 'danger');
+        }
+    });
+
     $(document).on('click', '#uploadNewGalleryBtn', async function() {
         await appendGalleryImages('newProductGalleryFiles', '#newProductGalleryImages', '#newProductGalleryPreview');
     });
 
     $(document).on('click', '#uploadTotalGalleryBtn', async function() {
         await appendGalleryImages('totalProductGalleryFiles', '#totalProductGalleryImages', '#totalProductGalleryPreview');
+    });
+
+    $(document).on('click', '#uploadProductGalleryBtn', async function() {
+        await appendGalleryImages('productGalleryFiles', '#productGalleryImages', '#productGalleryPreview');
     });
 
     $(document).on('click', '.d2w-remove-gallery', function() {

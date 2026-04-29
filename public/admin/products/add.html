@@ -62,134 +62,52 @@
                 </div>
                 <div id="statusMessage" class="alert d-none" role="alert"></div>
 
-                <div class="card-lite d2w-section-card d2w-add-card">
-                    <h6 class="mb-3"><i class="fas fa-rocket text-primary mr-1"></i> New Products Upload</h6>
-                    <form id="newProductForm" novalidate>
-                        <div class="form-row">
-                            <div class="form-group col-md-6">
-                                <label>Product Name *</label>
-                                <input type="text" class="form-control" id="newProductName" required>
-                            </div>
-                            <div class="form-group col-md-6">
-                                <label>Category *</label>
-                                <select class="form-control" id="newProductCategoryId" required></select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group col-md-3">
-                                <label>Price (BDT) *</label>
-                                <input type="number" class="form-control" id="newProductPrice" min="1" step="0.01" required>
-                            </div>
-                            <div class="form-group col-md-3">
-                                <label>Old Price</label>
-                                <input type="number" class="form-control" id="newProductOldPrice" min="0" step="0.01">
-                            </div>
-                            <div class="form-group col-md-3">
-                                <label>Sort Order</label>
-                                <input type="number" class="form-control" id="newProductSortOrder" value="0">
-                            </div>
-                            <div class="form-group col-md-3">
-                                <label>Product URL (optional)</label>
-                                <input type="url" class="form-control" id="newProductUrl" placeholder="https://...">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group col-md-6">
-                                <label>Cover Photo (Upload from Desktop) *</label>
-                                <div style="display:flex;gap:10px;align-items:flex-start;">
-                                    <div style="flex:1;">
-                                        <input type="file" class="form-control" id="newProductImageFile" accept="image/*" style="font-size:12px;">
-                                        <small class="text-muted">Select JPG, PNG, or WebP</small>
-                                        <input type="hidden" id="newProductImage">
-                                        <div id="newProductImagePreview" style="margin-top:8px;display:none;">
-                                            <img id="newProductImagePreviewImg" src="" alt="Preview" style="max-width:100px;max-height:100px;border-radius:8px;border:2px solid #f85606;">
-                                        </div>
-                                    </div>
-                                    <button type="button" class="btn btn-primary" id="uploadNewImageBtn" style="margin-top:4px;height:fit-content;font-weight:600;">
-                                        <i class="fas fa-cloud-upload-alt"></i> Upload
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="form-group col-md-6">
-                                <label>Description</label>
-                                <div class="d2w-editor-wrap" data-target="#newProductDescription">
-                                    <div class="d2w-editor-toolbar">
-                                        <button type="button" class="d2w-editor-btn" data-cmd="bold"><strong>B</strong></button>
-                                        <button type="button" class="d2w-editor-btn" data-cmd="italic"><em>I</em></button>
-                                        <button type="button" class="d2w-editor-btn" data-cmd="underline"><u>U</u></button>
-                                        <button type="button" class="d2w-editor-btn" data-cmd="insertUnorderedList">List</button>
-                                        <select class="d2w-editor-size" aria-label="Text size">
-                                            <option value="2">Small</option>
-                                            <option value="3" selected>Normal</option>
-                                            <option value="4">Large</option>
-                                            <option value="5">XL</option>
-                                        </select>
-                                        <input type="color" class="d2w-editor-color" value="#111111" aria-label="Text color">
-                                        <button type="button" class="d2w-editor-btn d2w-editor-clear">Clear</button>
-                                    </div>
-                                    <div class="d2w-editor-content" contenteditable="true"></div>
-                                </div>
-                                <textarea class="form-control d-none" id="newProductDescription" rows="3"></textarea>
-
-                                <label class="mt-3">Other Photos (Multiple)</label>
-                                <div style="display:flex;gap:10px;align-items:flex-start;">
-                                    <div style="flex:1;">
-                                        <input type="file" class="form-control" id="newProductGalleryFiles" accept="image/*" multiple style="font-size:12px;">
-                                        <small class="text-muted">Upload additional detail photos</small>
-                                        <input type="hidden" id="newProductGalleryImages" value="[]">
-                                        <div id="newProductGalleryPreview" style="margin-top:8px;display:none;gap:6px;flex-wrap:wrap;"></div>
-                                    </div>
-                                    <button type="button" class="btn btn-info" id="uploadNewGalleryBtn" style="margin-top:4px;height:fit-content;font-weight:600;">
-                                        <i class="fas fa-images"></i> Upload
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group col-md-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="newProductIsActive" checked>
-                                    <label class="form-check-label" for="newProductIsActive">Active</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="d-flex flex-wrap" style="gap:8px;">
-                            <button type="button" class="btn btn-primary btn-sm" id="newProductSaveBtn"><span id="newProductSaveLabel">Save New Product</span></button>
-                            <button type="button" class="btn btn-secondary btn-sm d-none" id="newProductCancelBtn">Cancel</button>
-                            <button type="button" class="btn btn-danger btn-sm" id="deleteNewProductBtn">Delete This Product</button>
-                        </div>
-                    </form>
-                </div>
-
                 <div class="card-lite d2w-section-card d2w-add-card mb-0">
-                    <h6 class="mb-3"><i class="fas fa-boxes text-success mr-1"></i> All Products Upload</h6>
-                    <form id="totalProductForm" novalidate>
+                    <h6 class="mb-3" id="productFormTitle"><i class="fas fa-layer-group text-primary mr-1"></i> Product Upload</h6>
+                    <form id="productForm" novalidate>
                         <div class="form-row">
-                            <div class="form-group col-md-6">
-                                <label>Product Name *</label>
-                                <input type="text" class="form-control" id="totalProductName" required>
+                            <div class="form-group col-md-4">
+                                <label>Product Type *</label>
+                                <select class="form-control" id="productType" required>
+                                    <option value="new">New Product</option>
+                                    <option value="total">All Product</option>
+                                </select>
                             </div>
-                            <div class="form-group col-md-6">
+                            <div class="form-group col-md-4">
                                 <label>Category *</label>
-                                <select class="form-control" id="totalProductCategoryId" required></select>
+                                <select class="form-control" id="productCategoryId" required></select>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label>Product Name *</label>
+                                <input type="text" class="form-control" id="productName" required>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group col-md-3">
                                 <label>Price (BDT) *</label>
-                                <input type="number" class="form-control" id="totalProductPrice" min="1" step="0.01" required>
+                                <input type="number" class="form-control" id="productPrice" min="1" step="0.01" required>
                             </div>
                             <div class="form-group col-md-3">
                                 <label>Old Price</label>
-                                <input type="number" class="form-control" id="totalProductOldPrice" min="0" step="0.01">
+                                <input type="number" class="form-control" id="productOldPrice" min="0" step="0.01">
                             </div>
+                            <div class="form-group col-md-3">
+                                <label>Wholesale Price (Admin only)</label>
+                                <input type="number" class="form-control" id="productWholesalePrice" min="0" step="0.01" placeholder="Internal only">
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label>Stock (Admin only)</label>
+                                <input type="number" class="form-control" id="productStock" min="0" step="1" placeholder="Internal only">
+                            </div>
+                        </div>
+                        <div class="form-row">
                             <div class="form-group col-md-3">
                                 <label>Sort Order</label>
-                                <input type="number" class="form-control" id="totalProductSortOrder" value="0">
+                                <input type="number" class="form-control" id="productSortOrder" value="0">
                             </div>
-                            <div class="form-group col-md-3">
+                            <div class="form-group col-md-9">
                                 <label>Product URL (optional)</label>
-                                <input type="url" class="form-control" id="totalProductUrl" placeholder="https://...">
+                                <input type="url" class="form-control" id="productUrl" placeholder="https://...">
                             </div>
                         </div>
                         <div class="form-row">
@@ -197,21 +115,21 @@
                                 <label>Cover Photo (Upload from Desktop) *</label>
                                 <div style="display:flex;gap:10px;align-items:flex-start;">
                                     <div style="flex:1;">
-                                        <input type="file" class="form-control" id="totalProductImageFile" accept="image/*" style="font-size:12px;">
+                                        <input type="file" class="form-control" id="productImageFile" accept="image/*" style="font-size:12px;">
                                         <small class="text-muted">Select JPG, PNG, or WebP</small>
-                                        <input type="hidden" id="totalProductImage">
-                                        <div id="totalProductImagePreview" style="margin-top:8px;display:none;">
-                                            <img id="totalProductImagePreviewImg" src="" alt="Preview" style="max-width:100px;max-height:100px;border-radius:8px;border:2px solid #f85606;">
+                                        <input type="hidden" id="productImage">
+                                        <div id="productImagePreview" style="margin-top:8px;display:none;">
+                                            <img id="productImagePreviewImg" src="" alt="Preview" style="max-width:100px;max-height:100px;border-radius:8px;border:2px solid #f85606;">
                                         </div>
                                     </div>
-                                    <button type="button" class="btn btn-primary" id="uploadTotalImageBtn" style="margin-top:4px;height:fit-content;font-weight:600;">
+                                    <button type="button" class="btn btn-primary" id="uploadProductImageBtn" style="margin-top:4px;height:fit-content;font-weight:600;">
                                         <i class="fas fa-cloud-upload-alt"></i> Upload
                                     </button>
                                 </div>
                             </div>
                             <div class="form-group col-md-6">
                                 <label>Description</label>
-                                <div class="d2w-editor-wrap" data-target="#totalProductDescription">
+                                <div class="d2w-editor-wrap" data-target="#productDescription">
                                     <div class="d2w-editor-toolbar">
                                         <button type="button" class="d2w-editor-btn" data-cmd="bold"><strong>B</strong></button>
                                         <button type="button" class="d2w-editor-btn" data-cmd="italic"><em>I</em></button>
@@ -228,17 +146,17 @@
                                     </div>
                                     <div class="d2w-editor-content" contenteditable="true"></div>
                                 </div>
-                                <textarea class="form-control d-none" id="totalProductDescription" rows="3"></textarea>
+                                <textarea class="form-control d-none" id="productDescription" rows="3"></textarea>
 
                                 <label class="mt-3">Other Photos (Multiple)</label>
                                 <div style="display:flex;gap:10px;align-items:flex-start;">
                                     <div style="flex:1;">
-                                        <input type="file" class="form-control" id="totalProductGalleryFiles" accept="image/*" multiple style="font-size:12px;">
+                                        <input type="file" class="form-control" id="productGalleryFiles" accept="image/*" multiple style="font-size:12px;">
                                         <small class="text-muted">Upload additional detail photos</small>
-                                        <input type="hidden" id="totalProductGalleryImages" value="[]">
-                                        <div id="totalProductGalleryPreview" style="margin-top:8px;display:none;gap:6px;flex-wrap:wrap;"></div>
+                                        <input type="hidden" id="productGalleryImages" value="[]">
+                                        <div id="productGalleryPreview" style="margin-top:8px;display:none;gap:6px;flex-wrap:wrap;"></div>
                                     </div>
-                                    <button type="button" class="btn btn-info" id="uploadTotalGalleryBtn" style="margin-top:4px;height:fit-content;font-weight:600;">
+                                    <button type="button" class="btn btn-info" id="uploadProductGalleryBtn" style="margin-top:4px;height:fit-content;font-weight:600;">
                                         <i class="fas fa-images"></i> Upload
                                     </button>
                                 </div>
@@ -247,15 +165,15 @@
                         <div class="form-row">
                             <div class="form-group col-md-3">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="totalProductIsActive" checked>
-                                    <label class="form-check-label" for="totalProductIsActive">Active</label>
+                                    <input class="form-check-input" type="checkbox" id="productIsActive" checked>
+                                    <label class="form-check-label" for="productIsActive">Active</label>
                                 </div>
                             </div>
                         </div>
                         <div class="d-flex flex-wrap" style="gap:8px;">
-                            <button type="button" class="btn btn-primary btn-sm" id="totalProductSaveBtn"><span id="totalProductSaveLabel">Save Total Product</span></button>
-                            <button type="button" class="btn btn-secondary btn-sm d-none" id="totalProductCancelBtn">Cancel</button>
-                            <button type="button" class="btn btn-danger btn-sm" id="deleteTotalProductBtn">Delete This Product</button>
+                            <button type="button" class="btn btn-primary btn-sm" id="productSaveBtn"><span id="productSaveLabel">Save Product</span></button>
+                            <button type="button" class="btn btn-secondary btn-sm d-none" id="productCancelBtn">Cancel</button>
+                            <button type="button" class="btn btn-danger btn-sm" id="deleteProductBtn">Delete This Product</button>
                         </div>
                     </form>
                 </div>
