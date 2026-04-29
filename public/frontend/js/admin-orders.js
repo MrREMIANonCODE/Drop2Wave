@@ -32,7 +32,7 @@ function getViewFromUrl() {
     try {
         const params = new URLSearchParams(window.location.search || '');
         const view = String(params.get('view') || 'all').toLowerCase();
-        const valid = new Set(['create', 'all', 'new', 'complete', 'no_response', 'cancelled', 'in_courier', 'hold']);
+        const valid = new Set(['create', 'all', 'new', 'complete', 'no_response', 'cancelled', 'in_courier', 'hold', 'sent_cd']);
         return valid.has(view) ? view : 'all';
     } catch (e) {
         return 'all';
@@ -86,7 +86,7 @@ function normalizeStatus(status) {
         processing: 'complete',
         shipped: 'in_courier',
         cancelled: 'cancelled',
-        delivered: 'delivered'
+        sent_cd: 'sent_cd'
     };
     return map[s] || s || 'new';
 }
@@ -99,7 +99,7 @@ function getStatusText(status) {
         cancelled: 'Cancelled',
         in_courier: 'In Courier',
         hold: 'Hold',
-        delivered: 'Delivered'
+        sent_cd: 'Sent CD'
     };
     return map[status] || status;
 }
@@ -275,7 +275,8 @@ function getOrderViewTitle() {
         no_response: 'No Response Orders',
         cancelled: 'Cancel Orders',
         in_courier: 'In Courier Orders',
-        hold: 'Hold Orders'
+        hold: 'Hold Orders',
+        sent_cd: 'Sent CD Orders'
     };
     return titles[currentView] || 'All Orders';
 }
@@ -283,13 +284,14 @@ function getOrderViewTitle() {
 function getOrderViewSubtitle() {
     const subtitles = {
         create: 'Create and submit customer orders directly from the admin panel.',
-        all: 'Master control page: move orders between New, Complete, No Response, Hold, Cancel, In Courier, and Delivered.',
+        all: 'Master control page: move orders between New, Complete, No Response, Hold, Cancel, In Courier, and Sent CD.',
         new: 'New daily incoming customer orders.',
         complete: 'Verified orders confirmed by customer call.',
         no_response: 'Orders where customer did not answer.',
         cancelled: 'Orders cancelled after customer declined purchase.',
         in_courier: 'Orders handed over to courier.',
-        hold: 'Orders currently on hold.'
+        hold: 'Orders currently on hold.',
+        sent_cd: 'Orders delivered and marked as Sent CD.'
     };
     return subtitles[currentView] || '';
 }
@@ -482,7 +484,7 @@ function renderCreateView() {
                                     <option value="hold" ${createOrderDraft.orderStatus === 'hold' ? 'selected' : ''}>Hold</option>
                                     <option value="cancelled" ${createOrderDraft.orderStatus === 'cancelled' ? 'selected' : ''}>Cancelled</option>
                                     <option value="in_courier" ${createOrderDraft.orderStatus === 'in_courier' ? 'selected' : ''}>In Courier</option>
-                                    <option value="delivered" ${createOrderDraft.orderStatus === 'delivered' ? 'selected' : ''}>Delivered</option>
+                                    <option value="sent_cd" ${createOrderDraft.orderStatus === 'sent_cd' ? 'selected' : ''}>Sent CD</option>
                                 </select>
                             </div>
                         </div>
@@ -755,7 +757,7 @@ async function submitCreateOrder() {
         hold: 'Order created and marked hold from admin create page',
         cancelled: 'Order created and marked cancelled from admin create page',
         in_courier: 'Order created and marked in courier from admin create page',
-        delivered: 'Order created and marked delivered from admin create page'
+        sent_cd: 'Order created and marked sent CD from admin create page'
     };
 
     const previousStore = cloneStore(store);
@@ -1047,16 +1049,16 @@ function getOrderMainImage(order) {
 }
 
 function promptNextStatus(currentStatus) {
-    const allowed = ['new', 'complete', 'no_response', 'hold', 'cancelled', 'in_courier', 'delivered'];
+    const allowed = ['new', 'complete', 'no_response', 'hold', 'cancelled', 'in_courier', 'sent_cd'];
     const input = prompt(
-        'Set new status:\nnew, complete, no_response, hold, cancelled, in_courier, delivered',
+        'Set new status:\nnew, complete, no_response, hold, cancelled, in_courier, sent_cd',
         String(currentStatus || 'new')
     );
     if (input === null) return null;
 
     const next = String(input || '').trim().toLowerCase();
     if (!allowed.includes(next)) {
-        alert('Invalid status. Use one of: new, complete, no_response, hold, cancelled, in_courier, delivered');
+        alert('Invalid status. Use one of: new, complete, no_response, hold, cancelled, in_courier, sent_cd');
         return null;
     }
     return next;
@@ -1070,7 +1072,7 @@ function getStatusOptionsMarkup(currentStatus) {
         { value: 'hold', label: 'Hold' },
         { value: 'cancelled', label: 'Cancelled' },
         { value: 'in_courier', label: 'In Courier' },
-        { value: 'delivered', label: 'Delivered' }
+        { value: 'sent_cd', label: 'Sent CD' }
     ];
 
     return statuses.map(function(status) {

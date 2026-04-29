@@ -47,7 +47,7 @@ function normalizeStatus(status) {
         processing: 'complete',
         shipped: 'in_courier',
         cancelled: 'cancelled',
-        delivered: 'delivered'
+        sent_cd: 'sent_cd'
     };
     return map[s] || s || 'new';
 }

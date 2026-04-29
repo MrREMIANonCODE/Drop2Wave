@@ -422,7 +422,8 @@
             noResponse: adminRoot + "order/no-response.html",
             hold: adminRoot + "order/hold.html",
             cancelled: adminRoot + "order/cancel.html",
-            inCourier: adminRoot + "order/in-courier.html"
+            inCourier: adminRoot + "order/in-courier.html",
+            sentCD: adminRoot + "order/sent-cd.html"
         };
     }
 
@@ -567,6 +568,7 @@
                 '<li class="nav-item"><a class="nav-link nav-sublink" data-order-sub="hold" href="' + links.hold + '"><i class="fas fa-pause-circle nav-icon"></i><span class="nav-label">Hold Orders</span></a></li>' +
                 '<li class="nav-item"><a class="nav-link nav-sublink" data-order-sub="cancelled" href="' + links.cancelled + '"><i class="fas fa-times-circle nav-icon"></i><span class="nav-label">Cancel Orders</span></a></li>' +
                 '<li class="nav-item"><a class="nav-link nav-sublink" data-order-sub="in_courier" href="' + links.inCourier + '"><i class="fas fa-shipping-fast nav-icon"></i><span class="nav-label">In Courier</span></a></li>' +
+                '<li class="nav-item"><a class="nav-link nav-sublink" data-order-sub="sent_cd" href="' + links.sentCD + '"><i class="fas fa-check-double nav-icon"></i><span class="nav-label">Sent CD</span></a></li>' +
             "</ul>";
 
         ordersLi.insertAdjacentElement("afterend", groupLi);

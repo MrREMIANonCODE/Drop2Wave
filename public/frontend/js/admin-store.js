@@ -52,7 +52,9 @@ const AdminStore = {
     
     // Save store object
     saveStore(store) {
-        localStorage.setItem(this.STORE_KEY, JSON.stringify(store));
+        const nextStore = this.normalizeStoreShape(store);
+        nextStore.updatedAt = Date.now();
+        localStorage.setItem(this.STORE_KEY, JSON.stringify(nextStore));
 
         // Keep cloud in sync for global, cross-browser updates.
         this.syncToCloud().catch(err => {
@@ -66,6 +68,87 @@ const AdminStore = {
         if (!Array.isArray(normalized.products)) normalized.products = [];
         if (!Array.isArray(normalized.reviews)) normalized.reviews = [];
         return normalized;
+    },
+
+    getStoreTimestamp(store) {
+        const raw = store && store.updatedAt;
+        if (!raw) return 0;
+        if (typeof raw === 'number') return raw;
+        if (raw && typeof raw.toMillis === 'function') return raw.toMillis();
+        if (raw && typeof raw.seconds === 'number') {
+            return (raw.seconds * 1000) + Math.round((raw.nanoseconds || 0) / 1000000);
+        }
+        const parsed = Number(raw);
+        return Number.isFinite(parsed) ? parsed : 0;
+    },
+
+    hasMeaningfulStoreData(store) {
+        const normalized = this.normalizeStoreShape(store);
+        return normalized.categories.length > 0 || normalized.products.length > 0 || normalized.reviews.length > 0;
+    },
+
+    shouldPreferCloudStore(localStore, cloudStore) {
+        const local = this.normalizeStoreShape(localStore);
+        const cloud = this.normalizeStoreShape(cloudStore);
+        const localUpdatedAt = this.getStoreTimestamp(local);
+        const cloudUpdatedAt = this.getStoreTimestamp(cloud);
+
+        if (localUpdatedAt > 0 && cloudUpdatedAt > 0) {
+            return cloudUpdatedAt >= localUpdatedAt;
+        }
+
+        if (!this.hasMeaningfulStoreData(cloud)) {
+            return false;
+        }
+
+        if (
+            cloud.categories.length < local.categories.length ||
+            cloud.products.length < local.products.length ||
+            cloud.reviews.length < local.reviews.length
+        ) {
+            return false;
+        }
+
+        return true;
+    },
+
+    isDataUrl(value) {
+        return typeof value === 'string' && /^data:image\//i.test(value.trim());
+    },
+
+    sanitizeStoreForCloud(store) {
+        const normalized = this.normalizeStoreShape(store);
+
+        const categories = (normalized.categories || []).map(cat => {
+            const next = { ...cat };
+            if (this.isDataUrl(next.image)) next.image = '';
+            return next;
+        });
+
+        const products = (normalized.products || []).map(prod => {
+            const next = { ...prod };
+            if (this.isDataUrl(next.image)) next.image = '';
+            if (this.isDataUrl(next.coverImage)) next.coverImage = '';
+            if (Array.isArray(next.galleryImages)) {
+                next.galleryImages = next.galleryImages.filter(img => !this.isDataUrl(img));
+            }
+            return next;
+        });
+
+        const reviews = (normalized.reviews || []).map(review => {
+            const next = { ...review };
+            if (Array.isArray(next.images)) {
+                next.images = next.images.filter(img => !this.isDataUrl(img));
+            }
+            return next;
+        });
+
+        return {
+            ...normalized,
+            categories,
+            products,
+            reviews
+        };
     },
 
     loadScript(src) {
@@ -150,6 +233,12 @@ const AdminStore = {
 
             const payload = snap.data() || {};
             const cloudStore = this.normalizeStoreShape(payload.store || {});
+            const localStore = this.getStore();
+
+            if (!this.shouldPreferCloudStore(localStore, cloudStore)) {
+                return false;
+            }
+
             localStorage.setItem(this.STORE_KEY, JSON.stringify(cloudStore));
             return true;
         } catch (err) {
@@ -174,8 +263,19 @@ const AdminStore = {
             }, { merge: true });
             return true;
         } catch (err) {
-            console.warn('Failed to push store to cloud.', err);
-            return false;
+            const sanitizedStore = this.sanitizeStoreForCloud(store);
+
+            try {
+                await ref.set({
+                    store: sanitizedStore,
+                    updatedAt: window.firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                console.warn('Cloud sync used sanitized payload (inline base64 images removed).');
+                return true;
+            } catch (retryErr) {
+                console.warn('Failed to push store to cloud.', retryErr);
+                return false;
+            }
         }
     },
     
@@ -190,6 +290,7 @@ const AdminStore = {
     addCategory(category) {
         const store = this.getStore();
         category.id = category.id || 'cat_' + Date.now();
+        category.updatedAt = Date.now();
         if (!store.categories) store.categories = [];
         store.categories.push(category);
         this.saveStore(store);
@@ -200,7 +301,7 @@ const AdminStore = {
         const store = this.getStore();
         const index = store.categories.findIndex(c => c.id === id);
         if (index !== -1) {
-            store.categories[index] = { ...store.categories[index], ...updates };
+            store.categories[index] = { ...store.categories[index], ...updates, updatedAt: Date.now() };
             this.saveStore(store);
         }
         return store.categories[index];
@@ -223,6 +324,7 @@ const AdminStore = {
     addProduct(product) {
         const store = this.getStore();
         product.id = product.id || 'prod_' + Date.now();
+        product.updatedAt = Date.now();
         if (!store.products) store.products = [];
         store.products.push(product);
         this.saveStore(store);
@@ -233,7 +335,7 @@ const AdminStore = {
         const store = this.getStore();
         const index = store.products.findIndex(p => p.id === id);
         if (index !== -1) {
-            store.products[index] = { ...store.products[index], ...updates };
+            store.products[index] = { ...store.products[index], ...updates, updatedAt: Date.now() };
             this.saveStore(store);
         }
         return store.products[index];

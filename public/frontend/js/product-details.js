@@ -116,6 +116,86 @@
         localStorage.setItem(STORE_KEY, JSON.stringify(normalizeStoreShape(store)));
     }
 
+    function getStoreTimestamp(store) {
+        var raw = store && store.updatedAt;
+        if (!raw) return 0;
+        if (typeof raw === "number") return raw;
+        if (raw && typeof raw.toMillis === "function") return raw.toMillis();
+        if (raw && typeof raw.seconds === "number") {
+            return (raw.seconds * 1000) + Math.round((raw.nanoseconds || 0) / 1000000);
+        }
+        var parsed = Number(raw);
+        return isFinite(parsed) ? parsed : 0;
+    }
+
+    function hasMeaningfulStoreData(store) {
+        return (Array.isArray(store && store.categories) && store.categories.length > 0) ||
+            (Array.isArray(store && store.products) && store.products.length > 0) ||
+            (Array.isArray(store && store.reviews) && store.reviews.length > 0);
+    }
+
+    function shouldPreferCloudStore(localStore, cloudStore) {
+        var local = normalizeStoreShape(localStore);
+        var cloud = normalizeStoreShape(cloudStore);
+        var localUpdatedAt = getStoreTimestamp(local);
+        var cloudUpdatedAt = getStoreTimestamp(cloud);
+
+        if (localUpdatedAt > 0 && cloudUpdatedAt > 0) {
+            return cloudUpdatedAt >= localUpdatedAt;
+        }
+
+        if (!hasMeaningfulStoreData(cloud)) return false;
+
+        if (
+            cloud.categories.length < local.categories.length ||
+            cloud.products.length < local.products.length ||
+            cloud.reviews.length < local.reviews.length
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function isDataUrl(value) {
+        return typeof value === "string" && /^data:image\//i.test(value.trim());
+    }
+
+    function sanitizeStoreForCloud(store) {
+        var normalized = normalizeStoreShape(store);
+
+        var categories = (normalized.categories || []).map(function (cat) {
+            var next = Object.assign({}, cat);
+            if (isDataUrl(next.image)) next.image = "";
+            return next;
+        });
+
+        var products = (normalized.products || []).map(function (prod) {
+            var next = Object.assign({}, prod);
+            if (isDataUrl(next.image)) next.image = "";
+            if (isDataUrl(next.coverImage)) next.coverImage = "";
+            if (Array.isArray(next.galleryImages)) {
+                next.galleryImages = next.galleryImages.filter(function (img) { return !isDataUrl(img); });
+            }
+            return next;
+        });
+
+        var reviews = (normalized.reviews || []).map(function (review) {
+            var next = Object.assign({}, review);
+            if (Array.isArray(next.images)) {
+                next.images = next.images.filter(function (img) { return !isDataUrl(img); });
+            }
+            return next;
+        });
+
+        return {
+            updatedAt: normalized.updatedAt,
+            categories: categories,
+            products: products,
+            reviews: reviews
+        };
+    }
+
     async function pullStoreFromCloud() {
         var ready = await ensureCloudReady();
         if (!ready) return false;
@@ -126,7 +206,14 @@
             if (!snap.exists) return false;
 
             var payload = snap.data() || {};
-            saveStoreRaw(payload.store || { categories: [], products: [], reviews: [] });
+            var cloudStore = payload.store || { categories: [], products: [], reviews: [] };
+            var localStore = readStoreRaw();
+
+            if (!shouldPreferCloudStore(localStore, cloudStore)) {
+                return false;
+            }
+
+            saveStoreRaw(cloudStore);
             return true;
         } catch (err) {
             console.warn("Failed to pull details store from cloud.", err);
@@ -146,7 +233,12 @@
                 if (!snap || !snap.exists) return;
 
                 var payload = snap.data() || {};
-                saveStoreRaw(payload.store || { categories: [], products: [], reviews: [] });
+                var cloudStore = payload.store || { categories: [], products: [], reviews: [] };
+                var localStore = readStoreRaw();
+
+                if (!shouldPreferCloudStore(localStore, cloudStore)) return;
+
+                saveStoreRaw(cloudStore);
 
                 if (activeProduct) {
                     var store = readStoreRaw();
@@ -178,8 +270,19 @@
             }, { merge: true });
             return true;
         } catch (err) {
-            console.warn("Failed to push details store to cloud.", err);
-            return false;
+            try {
+                var sanitized = sanitizeStoreForCloud(store);
+                var dbRetry = window.firebase.firestore();
+                await dbRetry.collection(CLOUD_COLLECTION).doc(CLOUD_DOCUMENT).set({
+                    store: sanitized,
+                    updatedAt: window.firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                console.warn("Details sync used sanitized payload (inline base64 images removed).");
+                return true;
+            } catch (retryErr) {
+                console.warn("Failed to push details store to cloud.", retryErr);
+                return false;
+            }
         }
     }
 

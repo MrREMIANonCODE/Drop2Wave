@@ -69,7 +69,7 @@ function normalizeStatus(status) {
         processing: 'complete',
         shipped: 'in_courier',
         cancelled: 'cancelled',
-        delivered: 'delivered'
+        sent_cd: 'sent_cd'
     };
     return map[s] || s || 'new';
 }
@@ -82,7 +82,7 @@ function getStatusText(status) {
         cancelled: 'Cancelled',
         in_courier: 'In Courier',
         hold: 'Hold',
-        delivered: 'Delivered'
+        sent_cd: 'Sent CD'
     };
     return map[normalizeStatus(status)] || String(status || '-');
 }
